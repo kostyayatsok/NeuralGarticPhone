@@ -28,5 +28,10 @@ class PictureGenerator:
     def set_width(self, width):
         self.width = width
 
-    def generate_latents(self, text_embeddings):
+    def __generate_latents(self, text_embeddings):
         pass
+    def __decode(self, latents):
+        pass
+    def generate_pictures(self, text_embeddings):
+        latents = self.__generate_latents(text_embeddings)
+        return self.__decode(latents)
