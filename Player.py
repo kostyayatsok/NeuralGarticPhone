@@ -3,11 +3,12 @@ from Generator import PictureGenerator
 
 
 class Player:
-    def __init__(self, ):
-        self.encoder = TextEncoder()
-        self.generator = PictureGenerator()
+    def __init__(self, batch_size=1):
+        self.batch_size = batch_size
+        self.encoder = TextEncoder(batch_size=self.batch_size)
+        self.generator = PictureGenerator(batch_size=self.batch_size)
 
-    def draw_pictures(self, prompt: list[str] | str):
+    def draw_pictures(self, prompt):
         if type(prompt) != list:
             prompt = [prompt]
         text_embeddings = self.encoder.encode(prompt)
@@ -22,6 +23,6 @@ def test_drawing(client, prompt):
 
 
 player = Player()
-test_drawing(player, ["cat"])
+test_drawing(player, ["big shark", "doghouse"])
 
 
