@@ -10,6 +10,7 @@ class PictureGenerator:
         self.vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae")
         self.unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet")
         self.device = device
+        self.batch_size = batch_size
         self.vae = self.vae.to(self.device)
         self.unet = self.unet.to(self.device)
         self.scheduler = LMSDiscreteScheduler.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="scheduler")
