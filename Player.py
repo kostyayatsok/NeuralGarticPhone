@@ -2,8 +2,6 @@ from TextEncoder import TextEncoder
 from Generator import PictureGenerator
 
 class Player:
-    # requirements:
-    #
     def __init__(self, ):
         self.encoder = TextEncoder()
         self.generator = PictureGenerator()
