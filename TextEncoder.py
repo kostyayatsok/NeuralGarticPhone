@@ -4,7 +4,7 @@ import torch
 
 class TextEncoder:
     # TextEncoder. It can capture prompts and convert them to vectors.
-    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", batch_size = 1):
+    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", batch_size=1):
         self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
         self.text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
         self.device = device
