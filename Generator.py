@@ -4,6 +4,7 @@ from diffusers import LMSDiscreteScheduler
 import copy
 from tqdm.auto import tqdm
 from torch import autocast
+from PIL import Image
 
 class PictureGenerator:
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", batch_size=1, height=512, width=512, num_inference_steps=20, seed=None, guidance_scale=7.5):
@@ -17,12 +18,11 @@ class PictureGenerator:
         self.height = height
         self.width = width
         self.steps = num_inference_steps
-        self.guidance_scale=guidance_scale
+        self.guidance_scale = guidance_scale
         if seed is not None:
             self.gen = torch.manual_seed(seed)
         else:
             self.gen = torch.Generator()
-        self.gen = self.gen.to(device)
 
     def set_height(self, height):
         self.height = height
@@ -59,7 +59,11 @@ class PictureGenerator:
 
         with torch.no_grad():
             image = self.vae.decode(latents).sample
-        return image
+        image = (image / 2 + 0.5).clamp(0, 1)
+        image = image.detach().cpu().permute(0, 2, 3, 1).numpy()
+        images = (image * 255).round().astype("uint8")
+        pil_images = [Image.fromarray(image) for image in images]
+        return pil_images
 
     def generate_pictures(self, text_embeddings):
         latents = self.__generate_latents(text_embeddings)
