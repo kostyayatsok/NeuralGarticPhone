@@ -11,8 +11,7 @@ class TextEncoder:
         self.text_encoder = self.text_encoder.to(device)
         self.batch_size = batch_size
 
-    def __encode_batch(self, tokens):
-        sz = len(tokens)
+    def __encode_batch(self, tokens, sz):
         with torch.no_grad():
             text_embeddings = self.text_encoder(tokens.input_ids.to(self.device))[0]
             max_length = tokens.input_ids.shape[-1]
@@ -30,7 +29,7 @@ class TextEncoder:
             batch_end = min(len(prompt), batch_beg + self.batch_size)
             cut = prompt[batch_beg:batch_end]
             text_input = self.tokenizer(cut, padding="max_length", max_length=self.tokenizer.model_max_length, truncation=True, return_tensors="pt")
-            result += self.__encode_batch(text_input)
+            result += self.__encode_batch(text_input, len(cut))
         # print(text_input)
 
         return torch.cat(result)
