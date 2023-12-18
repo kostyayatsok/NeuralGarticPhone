@@ -200,11 +200,14 @@ class Room:
                 if j % 2 == 0:
                     # это текст!
                     result += self.text_history[user_id][j // 2]
+                    current_id = self.cycle_list[(i + j) % len(self.cycle_list)]  # текущий чел из цепочки
+                    result += ' ({0}) ---> '.format(self.player_map[current_id].username)
                 else:
                     # а это картинка!
                     result += self.image_history[user_id][j // 2]
-                current_id = self.cycle_list[(i + j) % len(self.cycle_list)]  # текущий чел из цепочки
-                result += ' ({0}) ---> '.format(self.player_map[current_id].username)
+                    result += ' ---> '
+
+
             result = result[:-6]  # удаляем '--->'
             await self.send_plain_all(result)
 
