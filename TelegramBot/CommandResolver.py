@@ -137,8 +137,13 @@ async def time_command(user_data, text_data):
         await BotAPI.send_plain_text(player_id, 'Вы ещё не участвуете в играх!')
         return
 
-    # всё ок, сетаем
+    # только админ может менять настройки
     room = rooms[players[player_id]]
+    if not room.player_map[player_id].is_admin:
+        await BotAPI.send_plain_text(player_id, 'Вы не ведущий этой игры!')
+        return
+
+    # всё ок, сетаем
     await room.reset_time(int(text_data))
 
 
