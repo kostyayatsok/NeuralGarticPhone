@@ -1,6 +1,6 @@
 import random
 import BotAPI
-from GameUtils import Player
+from GameUtils import PlayerTG
 from GameUtils import PendingTimer
 import asyncio
 
@@ -30,7 +30,7 @@ class Room:
     # добавить игрока в комнату
     async def add_member(self, user_data, is_admin=False):
         user_id = user_data.id
-        new_player = Player(user_id, len(self.cycle_list), user_data.username)
+        new_player = PlayerTG(user_id, len(self.cycle_list), user_data.username)
         new_player.is_admin = is_admin
         self.player_map[user_id] = new_player
 

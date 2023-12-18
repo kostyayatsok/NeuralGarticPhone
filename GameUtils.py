@@ -3,10 +3,10 @@ import BotAPI
 
 
 # класс игрока
-class Player:
+class PlayerTG:
 
     def __init__(self, tg_id, numId, username):
-        self.tg_id = tg_id            # ТГ-ИД
+        self.tg_id = tg_id          # ТГ-ИД
         self.numId = numId          # Номер (не используется)
         self.username = username    # Имя юзера
         self.is_admin = False       # Админ ли?
