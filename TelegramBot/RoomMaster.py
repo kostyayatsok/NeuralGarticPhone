@@ -8,7 +8,7 @@ import asyncio
 # Собственно класс комнаты
 class Room:
 
-    def __init__(self, id_in):
+    def __init__(self, id_in, chat_id):
         self.room_id = id_in  # ID комнаты
         self.cycle_list = []  # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
         self.player_map = {}  # ТГ-ИД --> Player словарь
@@ -22,11 +22,21 @@ class Room:
         self.image_history = {}  # ТГ-ИД --> [картинка], хранит цепочки картинок для альбома
         self.text_history = {}  # ТГ-ИД --> [текст], хранит цепочки подписей к картинкам для альбома
         self.time_for_round = 30  # времени на один раунд (сек)
+        self.chat_id = chat_id
 
     # отправить сообщение всем игрокам
-    async def send_plain_all(self, message):
-        for user_id in self.player_map.copy().keys():
-            await BotAPI.send_plain_text(user_id, message)
+    async def send_plain_all(self, message, send_to_group=False):
+        if send_to_group and self.chat_id != 0:
+            await BotAPI.send_plain_text(self.chat_id, message)
+        else:
+            for user_id in self.player_map.copy().keys():
+                await BotAPI.send_plain_text(user_id, message)
+
+    def build_timer(self, time, pending, label):
+        if self.chat_id == 0:
+            self.timer = PendingTimer(time, pending, label, self.player_map.copy().keys())
+        else:
+            self.timer = PendingTimer(time, pending, label, [self.chat_id])
 
     # добавить игрока в комнату
     async def add_member(self, user_data, is_admin=False):
@@ -36,7 +46,7 @@ class Room:
         self.player_map[user_id] = new_player
 
         print(user_id, '(admin = {0}) now is in room'.format(is_admin), self.room_id)
-        await self.send_plain_all('Игрок {0} зашёл в комнату!'.format(user_data.username))
+        await self.send_plain_all('Игрок {0} зашёл в комнату!'.format(user_data.username), send_to_group=True)
 
     # вывести список игроков
     async def list_member(self, user_data):
@@ -52,12 +62,18 @@ class Room:
     # изменяем лимит по времени
     async def reset_time(self, new_time):
         self.time_for_round = new_time
-        await self.send_plain_all('Ведущий изменил лимит по времени! Новый лимит: {0} секунд'.format(new_time))
+        await self.send_plain_all(
+            'Ведущий изменил лимит по времени! Новый лимит: {0} секунд'.format(new_time), send_to_group=True)
 
     # стереть комнату
     def destroy_room(self):
+        for user_id in self.player_map.copy().keys():
+            if user_id in self.player_map.keys():
+                self.remove_member(user_id)
         print('room {0} has been destroyed'.format(self.room_id))
         rooms.pop(self.room_id)
+        if self.chat_id != 0:
+            chats.pop(self.chat_id)
         self.timer = None
 
     # выкинуть игрока
@@ -68,7 +84,7 @@ class Room:
         players.pop(user_id)
 
         print(user_id, 'left the room ', self.room_id)
-        await self.send_plain_all('Игрок {0} покинул комнату!'.format(user_data.username))
+        await self.send_plain_all('Игрок {0} покинул комнату!'.format(user_data.username), send_to_group=True)
 
         # если в комнате пусто
         if len(self.player_map) == 0:
@@ -76,6 +92,9 @@ class Room:
             return
 
         # если ливнул админ
+        if is_admin and self.chat_id != 0:
+            await self.send_plain_all('Админ ливнул из игры!', send_to_group=True)
+            self.destroy_room()
         if is_admin:
             # ищем нового
             new_admin = None
@@ -94,7 +113,9 @@ class Room:
         self.round = -1
         self.max_rounds = members
         self.tasks = []
-        self.timer = PendingTimer(11, [10, 5], 'Игра начнется через {0} секунд!', self.player_map.values())
+        self.build_timer(11,
+                         [10, 5],
+                         'Игра начнется через {0} секунд!')
         self.cycle_list = []
         self.cycle_map = {}
 
@@ -125,15 +146,15 @@ class Room:
         all_users = all_users[:-2]
 
         # начинаем!
-        await self.send_plain_all('Ведущий запустил игру!')
-        await self.send_plain_all('Игроки: ' + all_users)
+        await self.send_plain_all('Ведущий запустил игру!', send_to_group=True)
+        await self.send_plain_all('Игроки: ' + all_users, send_to_group=True)
         self.timer.start()
 
     # стоп-игра
     async def stop_game(self):
         self.stage = 0
         self.timer = None
-        await self.send_plain_all('Игра окончена, ждём ведущего')
+        await self.send_plain_all('Игра окончена, ждём ведущего', send_to_group=True)
         return
 
     # принять текст от игрока
@@ -154,7 +175,7 @@ class Room:
     async def text_round_start(self):
         self.round += 1
         time = self.time_for_round
-        self.timer = PendingTimer(time, [time, time // 2, time // 5], 'Осталось {0} секунд!', self.player_map.values())
+        self.build_timer(time, [time, time // 2, time // 5], 'Осталось {0} секунд!')
         self.timer.start()
         self.stage = 1
 
@@ -195,7 +216,7 @@ class Room:
 
     # вывод всех альбомов
     async def print_history(self):
-        await self.send_plain_all('Альбомы: ')
+        await self.send_plain_all('Альбомы: ', send_to_group=True)
         for i in range(len(self.cycle_list)):
             # для каждой цепочки...
             user_id = self.cycle_list[i]
@@ -212,7 +233,7 @@ class Room:
                     result += self.image_history[user_id][j // 2]
                     result += ' ---> '
             result = result[:-6]  # удаляем '--->'
-            await self.send_plain_all(result)
+            await self.send_plain_all(result, send_to_group=True)
 
     # апдейт комнаты
     async def room_update(self):
@@ -252,3 +273,4 @@ async def global_update():
 
 rooms = {}  # 'ROOM_ID' --> Room, все комнаты
 players = {}  # 'TG_ID' --> 'ROOM_ID', какой игрок в какой комнате
+chats = {}

@@ -1,18 +1,17 @@
 from RoomMaster import players
 from RoomMaster import rooms
 from RoomMaster import Room
+from RoomMaster import chats
 import BotAPI
 import random
 import string
 
 
 # команда на создание новой комнаты
-async def create_command(user_data):
-
-    # чел уже админит комнату?
-    if user_data.id in players.keys():
-        await BotAPI.send_plain_text(user_data.id, 'Вы уже создали комнату!')
-        return
+async def create_command(user_id, chat_id=0, in_chat=False):
+    if chat_id in chats.keys() or user_id in players.keys():
+        await BotAPI.send_plain_text(user_id, 'Вы уже создали комнату!')
+        return ''
 
     # генерим рандомный ID комнаты
     letters = string.ascii_letters
@@ -22,17 +21,28 @@ async def create_command(user_data):
     print('room {0} has been created'.format(random_string))
 
     # создаём комнату и добавляем туда админа
-    new_room = Room(random_string)
-    rooms[random_string] = new_room
-    await join_command(user_data, random_string)
-    rooms[random_string].player_map[user_data.id].is_admin = True
-    await BotAPI.send_plain_text(user_data.id, 'Ваша комната: \"' + random_string + '\"')
+    if in_chat:
+        new_room = Room(random_string, chat_id)
+        rooms[random_string] = new_room
+        chats[chat_id] = random_string
+        await BotAPI.send_plain_text(chat_id, 'Ваша комната: \"' + random_string + '\"')
+    else:
+        new_room = Room(random_string, 0)
+        rooms[random_string] = new_room
+        await BotAPI.send_plain_text(user_id, 'Ваша комната: \"' + random_string + '\"')
+    return random_string
 
 
 # команда на присоединение к комнате
-async def join_command(user_data, room_id):
+async def join_command(user_data, room_id, in_chat=False, is_admin=False):
     player_id = user_data.id
     print('player {0} is trying to join room {1}'.format(user_data.id, room_id))
+
+    if in_chat and room_id not in chats.keys():
+        print('player used invalidated join button for room {0}'.format(room_id))
+        return
+    if in_chat:
+        room_id = chats[room_id]
 
     # проверяем ID
     if room_id not in rooms.keys():
@@ -50,8 +60,10 @@ async def join_command(user_data, room_id):
         await BotAPI.send_plain_text(user_data.id, 'Вы не можете войти в комнату во время игры')
         return
 
+    room = rooms[room_id]
+
     # юзер теперь в комнате
-    await rooms[room_id].add_member(user_data)
+    await rooms[room_id].add_member(user_data, is_admin=is_admin)
     players[player_id] = room_id
     await BotAPI.send_plain_text(user_data.id, 'Добро пожаловать, игра скоро начнется')
 
