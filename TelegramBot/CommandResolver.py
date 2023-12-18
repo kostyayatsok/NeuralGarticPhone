@@ -127,6 +127,21 @@ async def list_command(user_data):
     await room.list_member(user_data)
 
 
+# команда на установку лимита по времени на раунд
+async def time_command(user_data, text_data):
+    print('player {0} is trying to re-time to {1}'.format(user_data.id, int(text_data)))
+    player_id = user_data.id
+
+    # челик в комнате?
+    if player_id not in players.keys():
+        await BotAPI.send_plain_text(player_id, 'Вы ещё не участвуете в играх!')
+        return
+
+    # всё ок, сетаем
+    room = rooms[players[player_id]]
+    await room.reset_time(int(text_data))
+
+
 # команда на остановку игры, ВСЕ ИГРОКИ ОСТАЮТСЯ В КОМНАТАХ
 async def stop_command(user_data):
     print('player {0} is trying to stop'.format(user_data.id))

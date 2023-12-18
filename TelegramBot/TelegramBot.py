@@ -13,24 +13,24 @@ import RoomMaster
 
 
 # Инитаем бота
-BOT_TOKEN = 'Вставьте сюда свой токен'
+BOT_TOKEN = 'Вставьте свой токен'
 botik = Bot(token=BOT_TOKEN)
 disp = Dispatcher(botik)
 BotAPI.init_bot(botik)
 
 
 @disp.message_handler(commands=['create_room'])
-async def start_command_callback(message: types.Message):
+async def create_command_callback(message: types.Message):
     await CommandResolver.create_command(message.from_user)
 
 
 @disp.message_handler(commands=['join'])
-async def start_command_callback(message: types.Message):
+async def join_command_callback(message: types.Message):
     await CommandResolver.join_command(message.from_user, message.text.replace('/join ', '', 1))
 
 
 @disp.message_handler(commands=['leave'])
-async def start_command_callback(message: types.Message):
+async def leave_command_callback(message: types.Message):
     await CommandResolver.leave_command(message.from_user)
 
 
@@ -45,18 +45,23 @@ async def stop_command_callback(message: types.Message):
 
 
 @disp.message_handler(commands=['history'])
-async def stop_command_callback(message: types.Message):
+async def history_command_callback(message: types.Message):
     await CommandResolver.history_command(message.from_user)
 
 
 @disp.message_handler(commands=['list'])
-async def stop_command_callback(message: types.Message):
+async def list_command_callback(message: types.Message):
     await CommandResolver.list_command(message.from_user)
 
 
-@disp.message_handler(commands=['apply'])
-async def apply_command_callback(message: types.Message):
-    await CommandResolver.apply_command(message.from_user, message.text.replace('/apply ', '', 1))
+@disp.message_handler(commands=['time'])
+async def time_command_callback(message: types.Message):
+    await CommandResolver.time_command(message.from_user, message.text.replace('/time ', '', 1))
+
+
+@disp.message_handler()
+async def empty_command_callback(message: types.Message):
+    await CommandResolver.apply_command(message.from_user, message.text)
 
 
 @disp.message_handler(commands=['help'])

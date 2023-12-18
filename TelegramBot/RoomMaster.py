@@ -9,18 +9,19 @@ import asyncio
 class Room:
 
     def __init__(self, id_in):
-        self.room_id = id_in      # ID комнаты
-        self.cycle_list = []      # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
-        self.player_map = {}      # ТГ-ИД --> Player словарь
-        self.cycle_map = {}       # ТГ-ИД --> ind словарь, где ind - индекс чела в массива cycle_list
-        self.timer = None         # Текущий таймер
-        self.stage = 0            # Стадия/режим работы: 0 == игра не начата, # 1 == игроки описывают картинку,
-                                  # 2 == нейронка генерит картинки
-        self.round = -1           # Номер раунда (только текстовые!)
-        self.max_rounds = -1      # Кол-во раундов (только текстовые!)
-        self.tasks = []           # Пока что не используется
-        self.image_history = {}   # ТГ-ИД --> [картинка], хранит цепочки картинок для альбома
-        self.text_history = {}    # ТГ-ИД --> [текст], хранит цепочки подписей к картинкам для альбома
+        self.room_id = id_in  # ID комнаты
+        self.cycle_list = []  # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
+        self.player_map = {}  # ТГ-ИД --> Player словарь
+        self.cycle_map = {}  # ТГ-ИД --> ind словарь, где ind - индекс чела в массива cycle_list
+        self.timer = None  # Текущий таймер
+        self.stage = 0  # Стадия/режим работы: 0 == игра не начата, # 1 == игроки описывают картинку,
+        # 2 == нейронка генерит картинки
+        self.round = -1  # Номер раунда (только текстовые!)
+        self.max_rounds = -1  # Кол-во раундов (только текстовые!)
+        self.tasks = []  # Пока что не используется
+        self.image_history = {}  # ТГ-ИД --> [картинка], хранит цепочки картинок для альбома
+        self.text_history = {}  # ТГ-ИД --> [текст], хранит цепочки подписей к картинкам для альбома
+        self.time_for_round = 30  # времени на один раунд (сек)
 
     # отправить сообщение всем игрокам
     async def send_plain_all(self, message):
@@ -47,6 +48,11 @@ class Room:
         result = result[:-1]
 
         await BotAPI.send_plain_text(user_data.id, result)
+
+    # изменяем лимит по времени
+    async def reset_time(self, new_time):
+        self.time_for_round = new_time
+        await self.send_plain_all('Ведущий изменил лимит по времени! Новый лимит: {0} секунд'.format(new_time))
 
     # стереть комнату
     def destroy_room(self):
@@ -147,28 +153,27 @@ class Room:
     # начало текстового раунда (дана картинка - введи подпись/предложение)
     async def text_round_start(self):
         self.round += 1
-        self.timer = PendingTimer(30, [20, 10, 5], 'Осталось {0} секунд!', self.player_map.values())
+        time = self.time_for_round
+        self.timer = PendingTimer(time, [time, time // 2, time // 5], 'Осталось {0} секунд!', self.player_map.values())
         self.timer.start()
         self.stage = 1
 
-        # добавляем пустую запись в историю (если чел вылетел - у него будет '' в качестве текста)
-        members = len(self.text_history)
+        # добавляем пустую запись в историю (если чел вылетел - у него будет '<ничего>' в качестве текста)
         for user_id in self.player_map.copy().keys():
-            self.text_history[user_id].append('')
+            self.text_history[user_id].append('<ничего>')
 
-    # начало кариночного раунда (нейросеть генерит картинки)
+    # начало картиночного раунда (нейросеть генерит картинки)
     async def picture_round_start(self):
         self.timer = None
         self.stage = 2
 
         # добавляем пустую запись в историю (когда нейронка сгенерит - тут будет путь к картинке/сама картинка)
-        members = len(self.image_history)
         for user_id in self.player_map.copy().keys():
-            self.image_history[user_id].append('')
-        #TODO: Отправляем тексты нейронке. Лучше всего нейронку пихать в отдельный поток
-        #TODO: т.к. иначе весь бот для ВСЕХ уйдёт в АФК при ожидании генерации
+            self.image_history[user_id].append('<ничего>')
+        # TODO: Отправляем тексты нейронке. Лучше всего нейронку пихать в отдельный поток
+        # TODO: т.к. иначе весь бот для ВСЕХ уйдёт в АФК при ожидании генерации
 
-    # апдейт кариночного раунда (нейросеть генерит картинки)
+    # апдейт картиночного раунда (нейросеть генерит картинки)
     async def picture_round_update(self):
         if len(self.tasks) == 0:
             # нейронка всё сгенерила!
@@ -206,8 +211,6 @@ class Room:
                     # а это картинка!
                     result += self.image_history[user_id][j // 2]
                     result += ' ---> '
-
-
             result = result[:-6]  # удаляем '--->'
             await self.send_plain_all(result)
 
@@ -244,8 +247,8 @@ async def global_update():
             # апдейтим комнату
             room = rooms[room_id]
             await room.room_update()
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.5)
 
 
-rooms = {}     # 'ROOM_ID' --> Room, все комнаты
-players = {}   # 'TG_ID' --> 'ROOM_ID', какой игрок в какой комнате
+rooms = {}  # 'ROOM_ID' --> Room, все комнаты
+players = {}  # 'TG_ID' --> 'ROOM_ID', какой игрок в какой комнате
