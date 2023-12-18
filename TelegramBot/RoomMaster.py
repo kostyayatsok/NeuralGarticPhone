@@ -95,7 +95,7 @@ class Room:
         if is_admin and self.chat_id != 0:
             await self.send_plain_all('Админ ливнул из игры!', send_to_group=True)
             self.destroy_room()
-        if is_admin:
+        elif is_admin:
             # ищем нового
             new_admin = None
             for user_id2 in self.player_map.copy().keys():
@@ -125,7 +125,6 @@ class Room:
             self.text_history[user_id] = []
 
         # генерим цикл
-        # TODO: проверить этот недокод :)
         for user_id in self.player_map.copy().keys():
             self.cycle_list.append(user_id)
         for iteration in range(members * 2):
