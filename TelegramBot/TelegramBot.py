@@ -6,7 +6,6 @@ import CommandResolver
 import asyncio
 import RoomMaster
 
-
 # TODO: потокобезопасность
 # TODO: настройки комнаты
 # TODO: локализация?
