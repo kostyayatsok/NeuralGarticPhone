@@ -26,8 +26,8 @@ class PictureDescriber:
         return preds
 
 
-desc = PictureDescriber()
-with Image.open("cat.jpg") as img:
-    res = desc.describe([img])
-    print(res)
+# desc = PictureDescriber()
+# with Image.open("cat.jpg") as img:
+#     res = desc.describe([img])
+#     print(res)
 # ['a gray and white cat is looking at the camera']
