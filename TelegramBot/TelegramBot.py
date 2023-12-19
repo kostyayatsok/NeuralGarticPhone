@@ -15,7 +15,7 @@ inline_btn_1 = InlineKeyboardButton('Играть', callback_data='button1')
 inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
 
 # Инитаем бота
-BOT_TOKEN = '6407292093:AAGQDj_GMQ1Uucp-NdaicfvuFEc7NQ4efIQ'
+BOT_TOKEN = 'Вставьте свой токен'
 botik = Bot(token=BOT_TOKEN)
 disp = Dispatcher(botik)
 BotAPI.init_bot(botik)
