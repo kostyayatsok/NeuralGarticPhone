@@ -6,4 +6,4 @@ ftfy
 accelerate
 tqdm
 Pillow
-aiogram
+aiogram==2.23.1
