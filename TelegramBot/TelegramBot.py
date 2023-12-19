@@ -21,6 +21,8 @@ disp = Dispatcher(botik)
 BotAPI.init_bot(botik)
 
 
+
+
 async def join_command_internal(message: types.Message | types.CallbackQuery):
     if isinstance(message, types.Message):
         await CommandResolver.join_command(message.from_user, message.text.replace('/join ', '', 1))
@@ -28,7 +30,7 @@ async def join_command_internal(message: types.Message | types.CallbackQuery):
         await CommandResolver.join_command(message.from_user, message.message.chat.id, in_chat=True)
 
 
-@disp.message_handler(chat_type=[types.ChatType.GROUP, types.ChatType.CHANNEL], commands=['create_room'])
+@disp.message_handler(chat_type=[types.ChatType.GROUP, types.ChatType.CHANNEL], commands=['create'])
 async def create_chat_callback(message: types.Message):
     room_id = await CommandResolver.create_command(message.from_user.id, message.chat.id, in_chat=True)
     if room_id == '':
