@@ -1,20 +1,14 @@
-from TextEncoder import TextEncoder
-from Generator import PictureGenerator
 from PictureDescriber import PictureDescriber
-from PIL import Image
+from Generator import PictureGenerator
+
 class Player:
-    def __init__(self, batch_size=1):
-        self.batch_size = batch_size
-        self.encoder = TextEncoder(batch_size=self.batch_size)
-        self.generator = PictureGenerator(batch_size=self.batch_size)
+    def __init__(self):
+        self.generator = PictureGenerator()
         self.describer = PictureDescriber()
 
     def draw_pictures(self, prompt):
-        if type(prompt) != list:
-            prompt = [prompt]
-        text_embeddings = self.encoder.encode(prompt)
-        pictures = self.generator.generate_pictures(text_embeddings)
-        return pictures
+        pictures = self.generator.generate_pictures(prompt) # пока только один промпт и 1 картинка в генерации
+        return pictures[0]
 
     def describe(self, images):
         return self.describer.describe(images)
@@ -22,11 +16,10 @@ class Player:
 
 def test_drawing(client, prompt):
     res = client.draw_pictures(prompt)
-    for i in range(len(prompt)):
-        res[i].save(f"{prompt[i]}.jpg")
+    # в res 1 картинка
+    res.save(f"{prompt}.jpg")
 
 
 player = Player()
-test_drawing(player, ["big shark", "doghouse"])
-
+test_drawing(player, "cat in <cute-game-style>")
 

@@ -1,83 +1,27 @@
 import torch
+from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, PNDMScheduler
 from diffusers import LMSDiscreteScheduler
 import copy
 from tqdm.auto import tqdm
 from torch import autocast
 from PIL import Image
+from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline
+
+
+sdpath = "stabilityai/stable-diffusion-2"
 
 
 class PictureGenerator:
-    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", batch_size=2, height=512, width=512, num_inference_steps=20, seed=None, guidance_scale=7.5):
-        self.vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae")
-        self.unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet")
+
+    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", steps=25, guidance_scale=7.5, path="sd-concepts-library/cute-game-style-2-1"):
         self.device = device
-        self.batch_size = batch_size
-        self.vae = self.vae.to(self.device)
-        self.unet = self.unet.to(self.device)
-        self.scheduler = LMSDiscreteScheduler.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="scheduler")
-        self.height = height
-        self.width = width
-        self.steps = num_inference_steps
-        self.guidance_scale = guidance_scale
-        if seed is not None:
-            self.gen = torch.manual_seed(seed)
-        else:
-            self.gen = torch.Generator()
+        self.steps = steps
+        self.scale = guidance_scale
+        self.pipe = StableDiffusionPipeline.from_pretrained(sdpath, torch_dtype=torch.float16).to(device)
+        self.pipe.load_textual_inversion(path)
 
-    def set_height(self, height):
-        self.height = height
-
-    def set_width(self, width):
-        self.width = width
-
-    def __generate_latents_batch(self, text_embeddings):
-        sz = text_embeddings.shape[0]
-
-        latents = torch.randn(
-          (sz // 2, self.unet.config.in_channels, self.height // 8, self.width // 8),
-          generator=self.gen,
-        )
-        latents = latents.to(self.device)
-
-        self.scheduler.set_timesteps(self.steps)
-        latents = latents * self.scheduler.init_noise_sigma
-
-        for t in tqdm(self.scheduler.timesteps):
-            latent_model_input = torch.cat([latents] * 2)
-
-            latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-
-            with torch.no_grad():
-                noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample # может быть на каждый батч отдельно создавать
-
-            noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-            noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_text - noise_pred_uncond)
-
-            latents = self.scheduler.step(noise_pred, t, latents).prev_sample
-        return latents
-
-    def __generate_latents(self, text_embeddings):
-        print(text_embeddings.shape)
-        sz = list(text_embeddings.shape)[0]
-        latents = []
-        for batch_beg in range(0, sz, 2 * self.batch_size):
-            batch_end = min(sz, batch_beg + 2 * self.batch_size)
-            cut = text_embeddings[batch_beg:batch_end]
-            latents.append(self.__generate_latents_batch(cut))
-        return torch.cat(latents)
-
-    def __decode(self, latents):
-        latents = 1 / 0.18215 * latents
-
-        with torch.no_grad():
-            image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        image = image.detach().cpu().permute(0, 2, 3, 1).numpy()
-        images = (image * 255).round().astype("uint8")
-        pil_images = [Image.fromarray(image) for image in images]
-        return pil_images
-
-    def generate_pictures(self, text_embeddings):
-        latents = self.__generate_latents(text_embeddings)
-        return self.__decode(latents)
+    def generate_pictures(self, prompt):
+        images = self.pipe(prompt, num_images_per_prompt=1, num_inference_steps=self.steps, guidance_scale=self.scale).images
+        return images
