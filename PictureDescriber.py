@@ -1,6 +1,8 @@
 from transformers import VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
 import torch
 from PIL import Image
+
+
 class PictureDescriber:
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
         self.model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
@@ -24,8 +26,8 @@ class PictureDescriber:
         return preds
 
 
-desc = PictureDescriber()
-with Image.open("cat.jpg") as img:
-    res = desc.describe([img])
-    print(res)
+# desc = PictureDescriber()
+# with Image.open("cat.jpg") as img:
+#     res = desc.describe([img])
+#     print(res)
 # ['a gray and white cat is looking at the camera']
