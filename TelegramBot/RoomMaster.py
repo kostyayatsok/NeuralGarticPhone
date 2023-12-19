@@ -1,14 +1,19 @@
+
 import random
 import BotAPI
 from GameUtils import PlayerTG
 from GameUtils import PendingTimer
 import asyncio
-
-
+import requests
+from PIL import Image
+from io import BytesIO
+#import grequests
+import PIL
 # Собственно класс комнаты
 class Room:
 
     def __init__(self, id_in):
+        self.URL = "https://cf57-35-245-65-202.ngrok.io"
         self.room_id = id_in      # ID комнаты
         self.cycle_list = []      # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
         self.player_map = {}      # ТГ-ИД --> Player словарь
@@ -147,7 +152,7 @@ class Room:
     # начало текстового раунда (дана картинка - введи подпись/предложение)
     async def text_round_start(self):
         self.round += 1
-        self.timer = PendingTimer(30, [20, 10, 5], 'Осталось {0} секунд!', self.player_map.values())
+        self.timer = PendingTimer(4, [3, 2, 1], 'Осталось {0} секунд!', self.player_map.values())
         self.timer.start()
         self.stage = 1
 
@@ -156,30 +161,44 @@ class Room:
         for user_id in self.player_map.copy().keys():
             self.text_history[user_id].append('')
 
-    # начало кариночного раунда (нейросеть генерит картинки)
+    # начало картиночного раунда (нейросеть генерит картинки)
     async def picture_round_start(self):
         self.timer = None
         self.stage = 2
 
         # добавляем пустую запись в историю (когда нейронка сгенерит - тут будет путь к картинке/сама картинка)
         members = len(self.image_history)
+        cur_i_in_circle = 0
         for user_id in self.player_map.copy().keys():
-            self.image_history[user_id].append('')
+            URL_first = self.URL + "/?text=" + self.text_history[user_id][-1]
+            id = requests.post(URL_first)
+            self.tasks.append(id)
+
         #TODO: Отправляем тексты нейронке. Лучше всего нейронку пихать в отдельный поток
         #TODO: т.к. иначе весь бот для ВСЕХ уйдёт в АФК при ожидании генерации
 
-    # апдейт кариночного раунда (нейросеть генерит картинки)
+    # апдейт картиночного раунда (нейросеть генерит картинки)
     async def picture_round_update(self):
-        if len(self.tasks) == 0:
+        if len(self.tasks) == len(self.text_history):
             # нейронка всё сгенерила!
+            cur_i_in_circle = 0
+            for user_id in self.player_map.copy().keys():
+                id = self.tasks[cur_i_in_circle]
+                URL_second = self.URL + "/get_image" + str(id)
+                resp = requests.post(URL_second) #???
+                path = "img" + str(self.room_id) + str(self.round) + str(cur_i_in_circle) + ".jpg"
+                img = Image.open(BytesIO(resp.content))
+                img.save(path)
+                self.image_history[user_id].append(path)
+                cur_i_in_circle += 1
             cycle_len = len(self.cycle_list)
             for i in range(cycle_len):
                 from_id = self.cycle_list[i]  # первый чел из цепочки
                 to_id = self.cycle_list[(i + self.round) % cycle_len]  # текущий игрок цепочки
-
                 # пока что берём рандомную картинку и отправляем её
-                img_name = 'randomPictures/img' + str(random.randint(1, 8)) + '.png'
-                self.image_history[from_id][-1] = img_name
+                # img_name = 'randomPictures/img' + str(random.randint(1, 8)) + '.png'
+                # self.image_history[from_id][-1] = img_name
+                img_name = self.image_history[from_id][-1]
                 await BotAPI.send_photo_with_text(to_id, img_name, 'Что на этой картинке?')
 
             # следующий раунд!

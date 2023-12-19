@@ -13,7 +13,7 @@ import RoomMaster
 
 
 # Инитаем бота
-BOT_TOKEN = 'Вставьте сюда свой токен'
+BOT_TOKEN = ''
 botik = Bot(token=BOT_TOKEN)
 disp = Dispatcher(botik)
 BotAPI.init_bot(botik)
@@ -70,7 +70,7 @@ async def start_command_callback(message: types.Message):
     result += '/start - начать игру \n'
     result += '/stop - остановить игру \n'
     result += '/history - вывести альбомы \n'
-    result += '/aply - ввести текст/подпись к картинке \n'
+    result += '/apply - ввести текст/подпись к картинке \n'
     await BotAPI.send_plain_text(message.from_user.id, result)
 
 
