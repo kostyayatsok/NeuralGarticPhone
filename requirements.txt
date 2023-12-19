@@ -6,4 +6,5 @@ ftfy
 accelerate
 tqdm
 aiogram
-
+requests
+fastapi
