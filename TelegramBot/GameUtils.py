@@ -60,7 +60,3 @@ class PendingTimer:
             self.stop()
             return True
         return False
-
-
-
-

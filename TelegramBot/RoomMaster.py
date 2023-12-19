@@ -102,7 +102,7 @@ class Room:
         # если ливнул админ
         if is_admin and self.chat_id != 0 and destroy_on_empty:
             await self.send_plain_all('Админ ливнул из игры!', send_to_group=True)
-            self.destroy_room()
+            await self.destroy_room()
         elif is_admin and destroy_on_empty:
             # ищем нового
             new_admin = None

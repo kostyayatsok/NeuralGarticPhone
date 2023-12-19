@@ -69,8 +69,6 @@ async def join_command(user_data, room_id, in_chat=False, is_admin=False):
         await BotAPI.send_plain_text(user_data.id, 'Вы не можете войти в комнату во время игры')
         return
 
-    room = rooms[room_id]
-
     # юзер теперь в комнате
     await rooms[room_id].add_member(user_data, is_admin=is_admin)
     players[player_id] = room_id
