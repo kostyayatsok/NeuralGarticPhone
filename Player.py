@@ -1,4 +1,6 @@
 import copy
+from PictureDescriber import PictureDescriber
+from Generator import PictureGenerator
 class Player:
     def __init__(self):
         self.generator = PictureGenerator()
