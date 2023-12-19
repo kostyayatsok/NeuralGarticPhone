@@ -9,20 +9,21 @@ import asyncio
 class Room:
 
     def __init__(self, id_in, chat_id):
-        self.room_id = id_in  # ID комнаты
-        self.cycle_list = []  # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
-        self.player_map = {}  # ТГ-ИД --> Player словарь
-        self.cycle_map = {}  # ТГ-ИД --> ind словарь, где ind - индекс чела в массива cycle_list
-        self.timer = None  # Текущий таймер
-        self.stage = 0  # Стадия/режим работы: 0 == игра не начата, # 1 == игроки описывают картинку,
-        # 2 == нейронка генерит картинки
-        self.round = -1  # Номер раунда (только текстовые!)
-        self.max_rounds = -1  # Кол-во раундов (только текстовые!)
-        self.tasks = []  # Пока что не используется
-        self.image_history = {}  # ТГ-ИД --> [картинка], хранит цепочки картинок для альбома
-        self.text_history = {}  # ТГ-ИД --> [текст], хранит цепочки подписей к картинкам для альбома
-        self.time_for_round = 30  # времени на один раунд (сек)
-        self.chat_id = chat_id
+        self.room_id = id_in            # ID комнаты
+        self.cycle_list = []            # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
+        self.player_map = {}            # ТГ-ИД --> Player словарь
+        self.cycle_map = {}             # ТГ-ИД --> ind словарь, где ind - индекс чела в массива cycle_list
+        self.timer = None               # Текущий таймер
+        self.stage = 0                  # Стадия/режим работы: 0 == игра не начата, # 1 == игроки описывают картинку,
+                                        # 2 == нейронка генерит картинки
+        self.round = -1                 # Номер раунда (только текстовые!)
+        self.max_rounds = -1            # Кол-во раундов (только текстовые!)
+        self.tasks = []                 # Пока что не используется
+        self.image_history = {}         # ТГ-ИД --> [картинка], хранит цепочки картинок для альбома
+        self.text_history = {}          # ТГ-ИД --> [текст], хранит цепочки подписей к картинкам для альбома
+        self.time_for_round = 30        # времени на один раунд (сек)
+        self.generation_quality = 5     # качество генерации картинок
+        self.chat_id = chat_id          # ИД чата, в котором бот
 
     # отправить сообщение всем игрокам
     async def send_plain_all(self, message, send_to_group=False):
@@ -65,11 +66,18 @@ class Room:
         await self.send_plain_all(
             'Ведущий изменил лимит по времени! Новый лимит: {0} секунд'.format(new_time), send_to_group=True)
 
+    async def reset_quality(self, new_quality):
+        new_quality = max(new_quality, 1)
+        new_quality = min(new_quality, 10)
+        self.generation_quality = new_quality
+        await self.send_plain_all(
+            'Ведущий изменил качество генерации! Новое значение: {0}'.format(new_quality), send_to_group=True)
+
     # стереть комнату
-    def destroy_room(self):
+    async def destroy_room(self):
         for user_id in self.player_map.copy().keys():
             if user_id in self.player_map.keys():
-                self.remove_member(user_id)
+                await self.remove_member(user_id, destroy_on_empty=False)
         print('room {0} has been destroyed'.format(self.room_id))
         rooms.pop(self.room_id)
         if self.chat_id != 0:
@@ -77,25 +85,25 @@ class Room:
         self.timer = None
 
     # выкинуть игрока
-    async def remove_member(self, user_data):
-        user_id = user_data.id
+    async def remove_member(self, user_id, destroy_on_empty=True):
         is_admin = self.player_map[user_id].is_admin
+        username = self.player_map[user_id].username
         self.player_map.pop(user_id)
         players.pop(user_id)
 
         print(user_id, 'left the room ', self.room_id)
-        await self.send_plain_all('Игрок {0} покинул комнату!'.format(user_data.username), send_to_group=True)
+        await self.send_plain_all('Игрок {0} покинул комнату!'.format(username), send_to_group=True)
 
         # если в комнате пусто
-        if len(self.player_map) == 0:
-            self.destroy_room()
+        if len(self.player_map) == 0 and destroy_on_empty:
+            await self.destroy_room()
             return
 
         # если ливнул админ
-        if is_admin and self.chat_id != 0:
+        if is_admin and self.chat_id != 0 and destroy_on_empty:
             await self.send_plain_all('Админ ливнул из игры!', send_to_group=True)
             self.destroy_room()
-        elif is_admin:
+        elif is_admin and destroy_on_empty:
             # ищем нового
             new_admin = None
             for user_id2 in self.player_map.copy().keys():

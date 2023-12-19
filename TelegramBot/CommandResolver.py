@@ -10,8 +10,17 @@ import string
 # команда на создание новой комнаты
 async def create_command(user_id, chat_id=0, in_chat=False):
     if chat_id in chats.keys() or user_id in players.keys():
-        await BotAPI.send_plain_text(user_id, 'Вы уже создали комнату!')
-        return ''
+        if in_chat:
+            room_id = chats[chat_id]
+            room = rooms[room_id]
+            if room.stage == 0:
+                await room.destroy_room()
+            else:
+                await BotAPI.send_plain_text(user_id, 'Вы уже создали комнату!')
+                return ''
+        else:
+            await BotAPI.send_plain_text(user_id, 'Вы уже создали комнату!')
+            return ''
 
     # генерим рандомный ID комнаты
     letters = string.ascii_letters
@@ -80,7 +89,7 @@ async def leave_command(user_data):
 
     # RIP челик
     room_id = players[player_id]
-    await rooms[room_id].remove_member(user_data)
+    await rooms[room_id].remove_member(user_data.id)
     await BotAPI.send_plain_text(user_data.id, 'Прощай')
 
 
@@ -141,7 +150,7 @@ async def list_command(user_data):
 
 # команда на установку лимита по времени на раунд
 async def time_command(user_data, text_data):
-    print('player {0} is trying to re-time to {1}'.format(user_data.id, int(text_data)))
+    print('player {0} is trying to re-time to {1}'.format(user_data.id, text_data))
     player_id = user_data.id
 
     # челик в комнате?
@@ -155,8 +164,43 @@ async def time_command(user_data, text_data):
         await BotAPI.send_plain_text(player_id, 'Вы не ведущий этой игры!')
         return
 
+    # нам отправили какую-то лажу
+    if not text_data.isdigit():
+        await BotAPI.send_plain_text(player_id, 'Неверное значение параметра')
+        return
+
+    # нам отправили какую-то лажу X2
+    if int(text_data) > 100000 or int(text_data) == 0:
+        await BotAPI.send_plain_text(player_id, 'Это плохая идея :)')
+        return
+
     # всё ок, сетаем
     await room.reset_time(int(text_data))
+
+
+# команда на изменение качества генерации
+async def quality_command(user_data, text_data):
+    print('player {0} is trying to re-quality to {1}'.format(user_data.id, text_data))
+    player_id = user_data.id
+
+    # челик в комнате?
+    if player_id not in players.keys():
+        await BotAPI.send_plain_text(player_id, 'Вы ещё не участвуете в играх!')
+        return
+
+    # только админ может менять настройки
+    room = rooms[players[player_id]]
+    if not room.player_map[player_id].is_admin:
+        await BotAPI.send_plain_text(player_id, 'Вы не ведущий этой игры!')
+        return
+
+    # нам отправили какую-то лажу
+    if not text_data.isdigit():
+        await BotAPI.send_plain_text(player_id, 'Неверное значение параметра')
+        return
+
+    # всё ок, сетаем
+    await room.reset_quality(int(text_data))
 
 
 # команда на остановку игры, ВСЕ ИГРОКИ ОСТАЮТСЯ В КОМНАТАХ

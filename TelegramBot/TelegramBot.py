@@ -43,7 +43,7 @@ async def join_inline_callback(call: types.CallbackQuery):
     await join_command_internal(call)
 
 
-@disp.message_handler(commands=['create_room'])
+@disp.message_handler(commands=['create'])
 async def create_command_callback(message: types.Message):
     room_id = await CommandResolver.create_command(message.from_user.id)
     if room_id == '':
@@ -86,13 +86,19 @@ async def time_command_callback(message: types.Message):
     await CommandResolver.time_command(message.from_user, message.text.replace('/time ', '', 1))
 
 
+@disp.message_handler(commands=['quality'])
+async def quality_command_callback(message: types.Message):
+    await CommandResolver.quality_command(message.from_user, message.text.replace('/quality ', '', 1))
+
+
 @disp.message_handler(commands=['help'])
 async def start_command_callback(message: types.Message):
     result = ''
     result += '/help - помощь \n'
-    result += '/create_room - создать комнату \n'
+    result += '/create - создать комнату \n'
     result += '/list - список игроков \n'
     result += '/time - изменить лимит по времени на раунд \n'
+    result += '/quality - изменить качество генерации картинок'
     result += '/join - войти в комнату \n'
     result += '/leave - покинуть комнату \n'
     result += '/start - начать игру \n'
