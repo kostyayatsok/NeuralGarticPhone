@@ -5,6 +5,7 @@ scipy
 ftfy
 accelerate
 tqdm
-aiogram
 requests
 fastapi
+Pillow
+aiogram==2.23.1
