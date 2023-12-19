@@ -5,5 +5,5 @@ scipy
 ftfy
 accelerate
 tqdm
-aiogram
-
+Pillow
+aiogram==2.23.1
