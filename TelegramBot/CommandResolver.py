@@ -1,18 +1,26 @@
 from RoomMaster import players
 from RoomMaster import rooms
 from RoomMaster import Room
+from RoomMaster import chats
 import BotAPI
 import random
 import string
 
 
 # команда на создание новой комнаты
-async def create_command(user_data):
-
-    # чел уже админит комнату?
-    if user_data.id in players.keys():
-        await BotAPI.send_plain_text(user_data.id, 'Вы уже создали комнату!')
-        return
+async def create_command(user_id, chat_id=0, in_chat=False):
+    if chat_id in chats.keys() or user_id in players.keys():
+        if in_chat:
+            room_id = chats[chat_id]
+            room = rooms[room_id]
+            if room.stage == 0:
+                await room.destroy_room()
+            else:
+                await BotAPI.send_plain_text(user_id, 'Вы уже создали комнату!')
+                return ''
+        else:
+            await BotAPI.send_plain_text(user_id, 'Вы уже создали комнату!')
+            return ''
 
     # генерим рандомный ID комнаты
     letters = string.ascii_letters
@@ -22,17 +30,28 @@ async def create_command(user_data):
     print('room {0} has been created'.format(random_string))
 
     # создаём комнату и добавляем туда админа
-    new_room = Room(random_string)
-    rooms[random_string] = new_room
-    await join_command(user_data, random_string)
-    rooms[random_string].player_map[user_data.id].is_admin = True
-    await BotAPI.send_plain_text(user_data.id, 'Ваша комната: \"' + random_string + '\"')
+    if in_chat:
+        new_room = Room(random_string, chat_id)
+        rooms[random_string] = new_room
+        chats[chat_id] = random_string
+        await BotAPI.send_plain_text(chat_id, 'Ваша комната: \"' + random_string + '\"')
+    else:
+        new_room = Room(random_string, 0)
+        rooms[random_string] = new_room
+        await BotAPI.send_plain_text(user_id, 'Ваша комната: \"' + random_string + '\"')
+    return random_string
 
 
 # команда на присоединение к комнате
-async def join_command(user_data, room_id):
+async def join_command(user_data, room_id, in_chat=False, is_admin=False):
     player_id = user_data.id
     print('player {0} is trying to join room {1}'.format(user_data.id, room_id))
+
+    if in_chat and room_id not in chats.keys():
+        print('player used invalidated join button for room {0}'.format(room_id))
+        return
+    if in_chat:
+        room_id = chats[room_id]
 
     # проверяем ID
     if room_id not in rooms.keys():
@@ -51,7 +70,7 @@ async def join_command(user_data, room_id):
         return
 
     # юзер теперь в комнате
-    await rooms[room_id].add_member(user_data)
+    await rooms[room_id].add_member(user_data, is_admin=is_admin)
     players[player_id] = room_id
     await BotAPI.send_plain_text(user_data.id, 'Добро пожаловать, игра скоро начнется')
 
@@ -68,7 +87,7 @@ async def leave_command(user_data):
 
     # RIP челик
     room_id = players[player_id]
-    await rooms[room_id].remove_member(user_data)
+    await rooms[room_id].remove_member(user_data.id)
     await BotAPI.send_plain_text(user_data.id, 'Прощай')
 
 
@@ -125,6 +144,61 @@ async def list_command(user_data):
     # всё ок, выводим
     room = rooms[players[player_id]]
     await room.list_member(user_data)
+
+
+# команда на установку лимита по времени на раунд
+async def time_command(user_data, text_data):
+    print('player {0} is trying to re-time to {1}'.format(user_data.id, text_data))
+    player_id = user_data.id
+
+    # челик в комнате?
+    if player_id not in players.keys():
+        await BotAPI.send_plain_text(player_id, 'Вы ещё не участвуете в играх!')
+        return
+
+    # только админ может менять настройки
+    room = rooms[players[player_id]]
+    if not room.player_map[player_id].is_admin:
+        await BotAPI.send_plain_text(player_id, 'Вы не ведущий этой игры!')
+        return
+
+    # нам отправили какую-то лажу
+    if not text_data.isdigit():
+        await BotAPI.send_plain_text(player_id, 'Неверное значение параметра')
+        return
+
+    # нам отправили какую-то лажу X2
+    if int(text_data) > 100000 or int(text_data) == 0:
+        await BotAPI.send_plain_text(player_id, 'Это плохая идея :)')
+        return
+
+    # всё ок, сетаем
+    await room.reset_time(int(text_data))
+
+
+# команда на изменение качества генерации
+async def quality_command(user_data, text_data):
+    print('player {0} is trying to re-quality to {1}'.format(user_data.id, text_data))
+    player_id = user_data.id
+
+    # челик в комнате?
+    if player_id not in players.keys():
+        await BotAPI.send_plain_text(player_id, 'Вы ещё не участвуете в играх!')
+        return
+
+    # только админ может менять настройки
+    room = rooms[players[player_id]]
+    if not room.player_map[player_id].is_admin:
+        await BotAPI.send_plain_text(player_id, 'Вы не ведущий этой игры!')
+        return
+
+    # нам отправили какую-то лажу
+    if not text_data.isdigit():
+        await BotAPI.send_plain_text(player_id, 'Неверное значение параметра')
+        return
+
+    # всё ок, сетаем
+    await room.reset_quality(int(text_data))
 
 
 # команда на остановку игры, ВСЕ ИГРОКИ ОСТАЮТСЯ В КОМНАТАХ
