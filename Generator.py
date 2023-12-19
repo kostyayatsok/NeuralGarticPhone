@@ -7,19 +7,15 @@ from tqdm.auto import tqdm
 from torch import autocast
 from PIL import Image
 from diffusers import StableDiffusionPipeline
-sdpath = "stabilityai/stable-diffusion-2"
 from diffusers import StableDiffusionPipeline
-from huggingface_hub import login
-HF_TOKEN = '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'
+
+
+sdpath = "stabilityai/stable-diffusion-2"
 
 
 class PictureGenerator:
-    logged_in = False
 
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", steps=25, guidance_scale=7.5, path="sd-concepts-library/cute-game-style-2-1"):
-        if not PictureGenerator.logged_in:
-            login(HF_TOKEN)
-            PictureGenerator.logged_in = True
         self.device = device
         self.steps = steps
         self.scale = guidance_scale
