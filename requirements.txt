@@ -5,5 +5,7 @@ scipy
 ftfy
 accelerate
 tqdm
+requests
+fastapi
 Pillow
 aiogram==2.23.1

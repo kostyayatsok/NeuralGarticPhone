@@ -14,8 +14,7 @@ sdpath = "stabilityai/stable-diffusion-2"
 
 
 class PictureGenerator:
-
-    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", steps=25, guidance_scale=7.5, path="sd-concepts-library/cute-game-style-2-1"):
+    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu", steps=25, guidance_scale=7.5, path="sd-concepts-library/gphone01"):
         self.device = device
         self.steps = steps
         self.scale = guidance_scale

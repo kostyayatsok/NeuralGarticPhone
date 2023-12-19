@@ -31,3 +31,5 @@ class PictureDescriber:
 #     res = desc.describe([img])
 #     print(res)
 # ['a gray and white cat is looking at the camera']
+
+
