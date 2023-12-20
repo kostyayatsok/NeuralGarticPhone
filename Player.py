@@ -1,29 +1,32 @@
-import copy
-from PictureDescriber import PictureDescriber
+from TextEncoder import TextEncoder
 from Generator import PictureGenerator
+from PictureDescriber import PictureDescriber
+from PIL import Image
 class Player:
-    def __init__(self):
-        self.generator = PictureGenerator()
+    def __init__(self, batch_size=1):
+        self.batch_size = batch_size
+        self.encoder = TextEncoder(batch_size=self.batch_size)
+        self.generator = PictureGenerator(batch_size=self.batch_size)
         self.describer = PictureDescriber()
 
     def draw_pictures(self, prompt):
-        pictures = self.generator.generate_pictures(prompt) # пока только один промпт и 1 картинка в генерации
+        if type(prompt) != list:
+            prompt = [prompt]
+        text_embeddings = self.encoder.encode(prompt)
+        pictures = self.generator.generate_pictures(text_embeddings)
         return pictures
 
     def describe(self, images):
         return self.describer.describe(images)
 
 
-def test_drawing(client, prompt : list):
-    initial = copy.copy(prompt)
-    for j in range(len(prompt)):
-      prompt[j] += " drawing in <gp> style with white background"
-    print(prompt)
+def test_drawing(client, prompt):
     res = client.draw_pictures(prompt)
-    # в res 1 картинка
-    for i in range(len(res)):
-        res[i].save(f"{initial[i]}.jpg")
+    for i in range(len(prompt)):
+        res[i].save(f"{prompt[i]}.jpg")
 
 
-# player = Player()
-# test_drawing(player, ["cat", "dog", "bulldog"])
+player = Player()
+test_drawing(player, ["big shark", "doghouse"])
+
+
