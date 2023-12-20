@@ -2,21 +2,22 @@ import copy
 from PictureDescriber import PictureDescriber
 from Generator import PictureGenerator
 from PIL import Image
-
-
+from Translator import Translator
 class Player:
     def __init__(self):
+        self.translator = Translator('config2.ini')
         self.generator = PictureGenerator(steps=25)
         self.describer = PictureDescriber()
 
     def draw_pictures(self, prompt):
+        prompt = self.translator.translate(prompt, 'en')
         for j in range(len(prompt)):
             prompt[j] = "drawing of a " + prompt[j] + " in the style of <gp> on white background"
-        pictures = self.generator.generate_pictures(prompt) # пока только один промпт и 1 картинка в генерации
+        pictures = self.generator.generate_pictures(prompt)
         return pictures
 
     def describe(self, images):
-        return self.describer.describe(images)
+        return self.translator.translate(self.describer.describe(images), target_lang='ru')
 
 
 def image_grid(imgs, rows, cols):
@@ -31,7 +32,7 @@ def image_grid(imgs, rows, cols):
     return grid
 
 
-def test_drawing(client, prompt : list):
+def test_drawing(client, prompt: list):
     initial = copy.copy(prompt)
     res = client.draw_pictures(prompt)
     grid = image_grid(res, 1, len(res))
@@ -40,5 +41,5 @@ def test_drawing(client, prompt : list):
     grid.save("all.jpg")
 
 
-# player = Player()
-# test_drawing(player, ["cat", "dog"])
+player = Player()
+test_drawing(player, ["кот", "собака"])
