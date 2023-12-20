@@ -9,6 +9,7 @@ import asyncio
 class Room:
 
     def __init__(self, id_in, chat_id):
+        self.URL = ""                   # ссылка на сервер
         self.room_id = id_in            # ID комнаты
         self.cycle_list = []            # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
         self.player_map = {}            # ТГ-ИД --> Player словарь
@@ -197,14 +198,26 @@ class Room:
 
         # добавляем пустую запись в историю (когда нейронка сгенерит - тут будет путь к картинке/сама картинка)
         for user_id in self.player_map.copy().keys():
-            self.image_history[user_id].append('<ничего>')
+            URL_first = self.URL + "/?text=" + self.text_history[user_id][-1]
+            id = requests.post(URL_first)
+            self.tasks.append(id)
         # TODO: Отправляем тексты нейронке. Лучше всего нейронку пихать в отдельный поток
         # TODO: т.к. иначе весь бот для ВСЕХ уйдёт в АФК при ожидании генерации
 
     # апдейт картиночного раунда (нейросеть генерит картинки)
     async def picture_round_update(self):
-        if len(self.tasks) == 0:
+        if len(self.tasks) == len(self.text_history):
             # нейронка всё сгенерила!
+            cur_i_in_circle = 0
+            for user_id in self.player_map.copy().keys():
+                id = self.tasks[cur_i_in_circle]
+                URL_second = self.URL + "/get_image" + str(id)
+                resp = requests.post(URL_second)
+                path = "img" + str(self.room_id) + str(self.round) + str(cur_i_in_circle) + ".jpg"
+                img = Image.open(BytesIO(resp.content))
+                img.save(path)
+                self.image_history[user_id].append(path)
+                cur_i_in_circle += 1
             cycle_len = len(self.cycle_list)
             for i in range(cycle_len):
                 from_id = self.cycle_list[i]  # первый чел из цепочки
