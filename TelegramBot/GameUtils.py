@@ -49,8 +49,7 @@ class PendingTimer:
         # апдейтим пендинги
         iterator = self.pending_iterator
         while iterator < len(self.pending) and self.pending[iterator] >= self.time:
-            for player in self.receivers:
-                player_id = player.tg_id
+            for player_id in self.receivers:
                 value = self.pending[iterator]
                 await BotAPI.send_plain_text(player_id, self.label.format(value))
             self.pending_iterator += 1
@@ -61,7 +60,3 @@ class PendingTimer:
             self.stop()
             return True
         return False
-
-
-
-
