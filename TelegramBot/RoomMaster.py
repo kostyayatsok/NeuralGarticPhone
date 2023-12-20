@@ -206,7 +206,7 @@ class Room:
 
     # апдейт картиночного раунда (нейросеть генерит картинки)
     async def picture_round_update(self):
-        if len(self.tasks) == 0:
+        if len(self.tasks) == len(self.text_history):
             # нейронка всё сгенерила!
             cur_i_in_circle = 0
             for user_id in self.player_map.copy().keys():
