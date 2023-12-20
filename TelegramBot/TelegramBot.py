@@ -22,7 +22,6 @@ BotAPI.init_bot(botik)
 
 
 
-
 async def join_command_internal(message: types.Message | types.CallbackQuery):
     if isinstance(message, types.Message):
         await CommandResolver.join_command(message.from_user, message.text.replace('/join ', '', 1))
