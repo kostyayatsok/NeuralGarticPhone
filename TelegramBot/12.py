@@ -50,6 +50,7 @@ async def get_image(id):
       img_byte_arr = img_byte_arr.getvalue()
       return Response(content=img_byte_arr, media_type="image/jpeg")
     return None
+
 @app.post('/add_text')
 async def add_text(text):
     id = uuid4()
@@ -78,7 +79,6 @@ def generate_text():
         texts = list(map(lambda x : x[0], cur))
         ids = list(map(lambda x : x[1], cur))
         for img, id in zip(generate(texts), ids):
-            print(img)
             img.save(f"{id}.jpg")
         queue = queue[idx:]
         # img_byte_arr = BytesIO()
