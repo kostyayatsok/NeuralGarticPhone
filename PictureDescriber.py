@@ -4,13 +4,18 @@ from PIL import Image
 
 
 class PictureDescriber:
-    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
-        self.model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-        self.tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-        self.feature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-        self.device = device
-        self.model = self.model.to(device)
-
+    inited = False
+    model = None
+    feature_extractor = None
+    tokenizer = None
+    def __init__(self):
+        if not PictureDescriber.inited:
+          inited = True
+          device="cuda" if torch.cuda.is_available() else "cpu"
+          PictureDescriber.model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+          PictureDescriber.model = PictureDescriber.model.to(device)
+          PictureDescriber.tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+          PictureDescriber.feature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
         self.max_length = 16
         self.num_beams = 4
         self.gen_kwargs = {"max_length": self.max_length, "num_beams": self.num_beams}
