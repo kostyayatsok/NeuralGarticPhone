@@ -42,5 +42,5 @@ class Translator:
         return result
 
 
-trans = Translator(config_file='config2.ini')
-print(trans.translate(['Hello', 'World', 'Sleepy rabbit'], target_lang='ru'))
+# trans = Translator(config_file='config2.ini')
+# print(trans.translate(['Hello', 'World', 'Sleepy rabbit'], target_lang='ru'))
