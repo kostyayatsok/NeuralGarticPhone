@@ -17,7 +17,7 @@ class PictureDescriber:
             PictureDescriber.model = VisionEncoderDecoderModel.from_pretrained(
                 "nlpconnect/vit-gpt2-image-captioning"
             )
-            PictureDescriber.model = PictureDescriber.model.to(device)
+            PictureDescriber.model = PictureDescriber.model.to(PictureDescriber.device)
             PictureDescriber.tokenizer = AutoTokenizer.from_pretrained(
                 "nlpconnect/vit-gpt2-image-captioning"
             )

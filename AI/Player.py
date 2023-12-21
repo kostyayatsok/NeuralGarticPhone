@@ -2,7 +2,7 @@ import copy
 from PictureDescriber import PictureDescriber
 from Generator import PictureGenerator
 from PIL import Image
-from AI.Translator import Translator
+from Translator import Translator
 
 
 class Player:

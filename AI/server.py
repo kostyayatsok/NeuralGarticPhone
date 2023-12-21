@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from io import BytesIO
 from PIL import Image
 import os
-from AI.Player import Player
+from Player import Player
 import threading
 import nest_asyncio
 from pyngrok import ngrok
