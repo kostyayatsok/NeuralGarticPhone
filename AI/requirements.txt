@@ -1,0 +1,10 @@
+torch
+diffusers==0.16.1
+transformers
+scipy
+ftfy
+accelerate
+tqdm
+numpy
+pyngrok
+uvicorn

@@ -2,33 +2,41 @@ import copy
 from PictureDescriber import PictureDescriber
 from Generator import PictureGenerator
 from PIL import Image
-from Translator import Translator
+from AI.Translator import Translator
+
+
 class Player:
     def __init__(self):
-        self.translator = Translator('config2.ini')
+        self.translator = Translator("config2.ini")
         self.generator = PictureGenerator(steps=25)
         self.describer = PictureDescriber()
 
     def draw_pictures(self, prompt):
-        prompt = self.translator.translate(prompt, 'en')
+        prompt = self.translator.translate(prompt, "en")
         for j in range(len(prompt)):
-            prompt[j] = "drawing of a " + prompt[j] + " in the style of <gp> on white background"
+            prompt[j] = (
+                "drawing of a "
+                + prompt[j]
+                + " in the style of <gp> on white background"
+            )
         pictures = self.generator.generate_pictures(prompt)
         return pictures
 
     def describe(self, images):
-        return self.translator.translate(self.describer.describe(images), target_lang='ru')
+        return self.translator.translate(
+            self.describer.describe(images), target_lang="ru"
+        )
 
 
 def image_grid(imgs, rows, cols):
-    assert len(imgs) == rows*cols
+    assert len(imgs) == rows * cols
 
     w, h = imgs[0].size
-    grid = Image.new('RGB', size=(cols*w, rows*h))
+    grid = Image.new("RGB", size=(cols * w, rows * h))
     grid_w, grid_h = grid.size
 
     for i, img in enumerate(imgs):
-        grid.paste(img, box=(i%cols*w, i//cols*h))
+        grid.paste(img, box=(i % cols * w, i // cols * h))
     return grid
 
 
