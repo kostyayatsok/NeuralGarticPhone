@@ -30,8 +30,6 @@ class PictureGenerator:
             img = np.array(x).mean(-1)
             img[img > 30] = 255
             w, h = img.shape
-            print(img)
-            print(w, h)
             res = []
             for i in range(w):
                 for j in range(h):
