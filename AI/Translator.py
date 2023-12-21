@@ -5,13 +5,14 @@ import json
 
 
 class Translator:
-    def __init__(self, config_file):   # 2 hours default
+    def __init__(self, config_file):  # 2 hours default
         self.config = configparser.ConfigParser()
         self.config.read(config_file)
-        self.api_key = self.config['default']['api_key']
+        self.api_key = self.config["translator"]["api_key"]
         # with open(oauth_json) as f:
         #     self.oauth = json.load(f)
         # print(self.config.sections())
+
     #
     # def __upd_token(self):
     #     if time.time() - self.last_upd > self.upd_interval:
@@ -24,21 +25,21 @@ class Translator:
     def translate(self, prompt, target_lang):
         # self.__upd_token()
         headers = {
-            'Content-Type': 'application/json',
-            "Authorization": "Api-Key {0}".format(self.api_key)
+            "Content-Type": "application/json",
+            "Authorization": "Api-Key {0}".format(self.api_key),
         }
         body = {
             "targetLanguageCode": target_lang,
             "texts": prompt,
-            "folderId": self.config['default']["identifier"]
+            "folderId": self.config["translator"]["identifier"],
         }
         response = requests.post(
-            'https://translate.api.cloud.yandex.net/translate/v2/translate',
+            "https://translate.api.cloud.yandex.net/translate/v2/translate",
             json=body,
-            headers=headers
+            headers=headers,
         )
         res_json = json.loads(response.text)
-        result = [i['text'] for i in res_json["translations"]]
+        result = [i["text"] for i in res_json["translations"]]
         return result
 
 

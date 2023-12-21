@@ -7,7 +7,7 @@ from AI.Translator import Translator
 
 class Player:
     def __init__(self):
-        self.translator = Translator("config2.ini")
+        self.translator = Translator("../config.ini")
         self.generator = PictureGenerator(steps=25)
         self.describer = PictureDescriber()
 
@@ -49,5 +49,6 @@ def test_drawing(client, prompt: list):
     grid.save("all.jpg")
 
 
-player = Player()
-test_drawing(player, ["кот", "собака"])
+if __name__ == "__main__":
+    player = Player()
+    test_drawing(player, ["кот", "собака"])

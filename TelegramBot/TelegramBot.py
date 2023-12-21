@@ -1,3 +1,4 @@
+import configparser
 from aiogram import Bot, types
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
@@ -15,7 +16,11 @@ inline_btn_1 = InlineKeyboardButton("Играть", callback_data="button1")
 inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
 
 # Инитаем бота
-BOT_TOKEN = "6863444579:AAE4SBvtkGNG0psRY8YMpzTNuMrtL6lBjj0"
+
+config = configparser.ConfigParser()
+config.read("../config.ini")
+
+BOT_TOKEN = config["bot"]["BOT_TOKEN"]
 botik = Bot(token=BOT_TOKEN)
 disp = Dispatcher(botik)
 BotAPI.init_bot(botik)
