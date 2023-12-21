@@ -8,7 +8,7 @@ from torch import autocast
 from PIL import Image
 from diffusers import StableDiffusionPipeline
 from diffusers import StableDiffusionPipeline
-
+import numpy as np
 
 sdpath = "stabilityai/stable-diffusion-2"
 
@@ -24,7 +24,22 @@ class PictureGenerator:
         self.device = device
         self.steps = steps
         self.scale = guidance_scale
-
+    def make_bw(self, images):
+        _ = []
+        for x in images:
+            img = np.array(x).mean(-1)
+            img[img > 30] = 255
+            w, h = img.shape
+            print(img)
+            print(w, h)
+            res = []
+            for i in range(w):
+                for j in range(h):
+                    res.append((int(img[i][j]), int(img[i][j]), int(img[i][j])))
+            sus = Image.new('RGB', (w, h))
+            sus.putdata(res)
+            _.append(sus)
+        return _
     def generate_pictures(self, prompt):
         images = self.pipe(prompt, num_images_per_prompt=1, num_inference_steps=self.steps, guidance_scale=self.scale).images
-        return images
+        return self.make_bw(images)
