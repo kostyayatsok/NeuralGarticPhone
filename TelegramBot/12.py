@@ -27,7 +27,7 @@ def generate(texts):
    return image
 
 def send(img_byte_arr):
-    return Response(content=img_byte_arr, media_type="image/png")
+    return Response(content=img_byte_arr, media_type="image/jpeg")
 
 queue = []
 
@@ -35,20 +35,21 @@ queue = []
   "/get_image",
   responses = {
      200: {
-         "content": {"image/png": {}}
+         "content": {"image/jpeg": {}}
      }
   },
   response_class=Response
 )
 async def get_image(id):
     print(f"{id}.png")
-    if os.path.exists(f"{id}.png"):
-      image=Image.open(f"{id}.png")
+    if os.path.exists(f"{id}.jpg"):
+      image=Image.open(f"{id}.jpg")
       img_byte_arr = BytesIO()
-      image.save(img_byte_arr, format='PNG')
+      image.save(img_byte_arr, format='JPEG')
       img_byte_arr = img_byte_arr.getvalue()
-      return Response(content=img_byte_arr, media_type="image/png")
+      return Response(content=img_byte_arr, media_type="image/jpeg")
     return None
+  
 @app.post('/add_text')
 async def add_text(text):
     id = uuid4()
@@ -77,7 +78,7 @@ def generate_text():
         texts = list(map(lambda x : x[0], cur))
         ids = list(map(lambda x : x[1], cur))
         for img, id in zip(generate(texts), ids):
-            img.save(f"{id}.png")
+            img.save(f"{id}.jpg")
         queue = queue[idx:]
         # img_byte_arr = BytesIO()
         # img.save(img_byte_arr, format='PNG')

@@ -1,15 +1,21 @@
 import random
+from io import BytesIO
+from pathlib import Path
 import BotAPI
 from GameUtils import PlayerTG
 from GameUtils import PendingTimer
+from AlbumGenerator import Album
+from PIL import Image
+import requests
 import asyncio
+import shutil
 
 
 # Собственно класс комнаты
 class Room:
 
     def __init__(self, id_in, chat_id):
-        self.URL = ""                   # ссылка на сервер
+        self.URL = "Вставьте URL"                   # ссылка на сервер
         self.room_id = id_in            # ID комнаты
         self.cycle_list = []            # Список ТГ-ИД игроков в порядке их обхода (тот самый "цикл")
         self.player_map = {}            # ТГ-ИД --> Player словарь
@@ -17,14 +23,17 @@ class Room:
         self.timer = None               # Текущий таймер
         self.stage = 0                  # Стадия/режим работы: 0 == игра не начата, # 1 == игроки описывают картинку,
                                         # 2 == нейронка генерит картинки
-        self.round = -1                 # Номер раунда (только текстовые!)
+        self.round = 0                 # Номер раунда (только текстовые!)
         self.max_rounds = -1            # Кол-во раундов (только текстовые!)
-        self.tasks = []                 # Пока что не используется
+        self.tasks = {}                 # Пока что не используется
+        self.images = {}                # Пока что не используется
         self.image_history = {}         # ТГ-ИД --> [картинка], хранит цепочки картинок для альбома
         self.text_history = {}          # ТГ-ИД --> [текст], хранит цепочки подписей к картинкам для альбома
         self.time_for_round = 30        # времени на один раунд (сек)
         self.generation_quality = 5     # качество генерации картинок
         self.chat_id = chat_id          # ИД чата, в котором бот
+        self.albums = {}                # Альбомы!
+        Path(id_in).mkdir(parents=True, exist_ok=True)
 
     # отправить сообщение всем игрокам
     async def send_plain_all(self, message, send_to_group=False):
@@ -33,6 +42,13 @@ class Room:
         else:
             for user_id in self.player_map.copy().keys():
                 await BotAPI.send_plain_text(user_id, message)
+
+    async def send_photo_all(self, message, image_path, send_to_group=False):
+        if send_to_group and self.chat_id != 0:
+            await BotAPI.send_gif_with_text(self.chat_id, image_path, message)
+        else:
+            for user_id in self.player_map.copy().keys():
+                await BotAPI.send_gif_with_text(user_id, image_path, message)
 
     def build_timer(self, time, pending, label):
         if self.chat_id == 0:
@@ -84,8 +100,9 @@ class Room:
         if self.chat_id != 0:
             chats.pop(self.chat_id)
         self.timer = None
+        shutil.rmtree(self.room_id)
 
-    # выкинуть игрока
+        # выкинуть игрока
     async def remove_member(self, user_id, destroy_on_empty=True):
         is_admin = self.player_map[user_id].is_admin
         username = self.player_map[user_id].username
@@ -119,19 +136,20 @@ class Room:
     async def start_game(self):
         # инитаем всякое
         members = len(self.player_map.keys())
-        self.round = -1
+        self.round = 0
         self.max_rounds = members
-        self.tasks = []
-        self.build_timer(11,
-                         [10, 5],
-                         'Игра начнется через {0} секунд!')
+        self.tasks = {}
+        self.images = {}
+        self.build_timer(6, [5, 2], 'Игра начнется через {0} секунд!')
         self.cycle_list = []
         self.cycle_map = {}
+        self.albums = {}
 
         # чистим историю
         for user_id in self.player_map.copy().keys():
             self.image_history[user_id] = []
             self.text_history[user_id] = []
+            self.albums[user_id] = Album(self.player_map.copy(), self.room_id)
 
         # генерим цикл
         for user_id in self.player_map.copy().keys():
@@ -175,7 +193,7 @@ class Room:
         user_id = user_data.id
         members = len(self.cycle_list)
         # ищем ИД первого челика из цепочки картинка-текст
-        source_id = self.cycle_list[(self.cycle_map[user_id] - self.round + members) % members]
+        source_id = self.cycle_list[(self.cycle_map[user_id] - (self.round - 1) + members) % members]
         self.text_history[source_id][-1] = text_data  # изменяем последний текст в истории (текст текущего раунда)
         await BotAPI.send_plain_text(user_data.id, 'Принято')
 
@@ -183,62 +201,80 @@ class Room:
     async def text_round_start(self):
         self.round += 1
         time = self.time_for_round
-        self.build_timer(time, [time, time // 2, time // 5], 'Осталось {0} секунд!')
-        self.timer.start()
         self.stage = 1
 
         # добавляем пустую запись в историю (если чел вылетел - у него будет '<ничего>' в качестве текста)
         for user_id in self.player_map.copy().keys():
-            self.text_history[user_id].append('<ничего>')
+            self.text_history[user_id].append('random picture of anything')
+
+        self.build_timer(time + 1, [time, time // 2, time // 5], 'Осталось {0} секунд!')
+        self.timer.start()
 
     # начало картиночного раунда (нейросеть генерит картинки)
     async def picture_round_start(self):
         self.timer = None
         self.stage = 2
-
-        # добавляем пустую запись в историю (когда нейронка сгенерит - тут будет путь к картинке/сама картинка)
+        members = len(self.cycle_map)
+        await self.send_plain_all('Ждите, картинки генерируются', send_to_group=True)
         for user_id in self.player_map.copy().keys():
-            URL_first = self.URL + "/?text=" + self.text_history[user_id][-1]
-            id = requests.post(URL_first)
-            self.tasks.append(id)
-        # TODO: Отправляем тексты нейронке. Лучше всего нейронку пихать в отдельный поток
-        # TODO: т.к. иначе весь бот для ВСЕХ уйдёт в АФК при ожидании генерации
+            current_iter = (self.cycle_map[user_id] + self.round - 1 + members) % members
+            await self.albums[user_id].add_text_page((len(self.text_history[user_id])-1)*2,
+                                                     len(self.text_history) * 2 - 1,
+                                                     self.text_history[user_id][-1], self.cycle_list[current_iter])
+
+        for user_id in self.player_map.copy().keys():
+            current_iter = (self.cycle_map[user_id] + self.round - 1 + members) % members
+            URL_first = self.URL + "/add_text" + "?text=" + self.text_history[user_id][-1]
+            print('generating picture for user {0} text is {1}'.format(self.cycle_list[current_iter],
+                                                                       self.text_history[user_id][-1]))
+            resp = requests.post(URL_first)
+            id = resp.text
+            self.tasks[user_id] = id
 
     # апдейт картиночного раунда (нейросеть генерит картинки)
     async def picture_round_update(self):
-        if len(self.tasks) == len(self.text_history):
+        for user_id in self.tasks.keys():
+            image_id = self.tasks[user_id]
+            if image_id is None:
+                continue
+            good_image_id = image_id
+            good_image_id = good_image_id[1:-1]
+            URL_second = self.URL + "/get_image" + "?id=" + good_image_id
+            resp = requests.post(URL_second)
+            if resp.text == "":
+                continue
+
+            self.tasks[user_id] = None
+            path = self.room_id + "/img" + str(self.room_id) + str(self.round) + \
+                   str(good_image_id) + str(user_id) + ".jpg"
+            img = Image.open(BytesIO(resp.content))
+            self.images[user_id] = path
+            img.save(path)
+            self.image_history[user_id].append(path)
+
+        if len(self.images) == len(self.text_history):
             # нейронка всё сгенерила!
-            cur_i_in_circle = 0
-            for user_id in self.player_map.copy().keys():
-                id = self.tasks[cur_i_in_circle]
-                URL_second = self.URL + "/get_image" + str(id)
-                resp = requests.post(URL_second)
-                path = "img" + str(self.room_id) + str(self.round) + str(cur_i_in_circle) + ".jpg"
-                img = Image.open(BytesIO(resp.content))
-                img.save(path)
-                self.image_history[user_id].append(path)
-                cur_i_in_circle += 1
             cycle_len = len(self.cycle_list)
             for i in range(cycle_len):
                 from_id = self.cycle_list[i]  # первый чел из цепочки
                 to_id = self.cycle_list[(i + self.round) % cycle_len]  # текущий игрок цепочки
-
-                # пока что берём рандомную картинку и отправляем её
-                img_name = 'randomPictures/img' + str(random.randint(1, 8)) + '.png'
-                self.image_history[from_id][-1] = img_name
+                img_name = self.image_history[from_id][-1]
+                await self.albums[from_id].add_image_page((len(self.image_history[from_id]))*2-1,
+                                                          len(self.image_history) * 2 - 1,
+                                                          self.image_history[from_id][-1], 0)
+                print('resend picture from {0} to {1}'.format(from_id, to_id))
                 await BotAPI.send_photo_with_text(to_id, img_name, 'Что на этой картинке?')
 
             # следующий раунд!
+            self.tasks = {}
+            self.images = {}
             await self.text_round_start()
             return
-        # TODO: Ждём нейронку. Лучше всего нейронку пихать в отдельный поток
-        # TODO: т.к. иначе весь бот для ВСЕХ уйдёт в АФК при ожидании генерации
 
     # вывод всех альбомов
     async def print_history(self):
         await self.send_plain_all('Альбомы: ', send_to_group=True)
         for i in range(len(self.cycle_list)):
-            # для каждой цепочки...
             user_id = self.cycle_list[i]
             result = str(i + 1) + ': '
             for j in range((len(self.image_history[user_id])) + len(self.text_history[user_id])):
@@ -246,7 +282,7 @@ class Room:
                 if j % 2 == 0:
                     # это текст!
                     result += self.text_history[user_id][j // 2]
-                    current_id = self.cycle_list[(i + j) % len(self.cycle_list)]  # текущий чел из цепочки
+                    current_id = self.cycle_list[(i + j // 2) % len(self.cycle_list)]  # текущий чел из цепочки
                     result += ' ({0}) ---> '.format(self.player_map[current_id].username)
                 else:
                     # а это картинка!
@@ -254,6 +290,13 @@ class Room:
                     result += ' ---> '
             result = result[:-6]  # удаляем '--->'
             await self.send_plain_all(result, send_to_group=True)
+        for i in range(len(self.cycle_list)):
+            # для каждой цепочки...
+            user_id = self.cycle_list[i]
+            album = self.albums[user_id]
+            gif_path = self.room_id + '/' + 'resultGif' + str(i) + '.gif'
+            album.make_gif(gif_path, 2000)
+            await self.send_photo_all('', gif_path, send_to_group=True)
 
     # апдейт комнаты
     async def room_update(self):
@@ -271,8 +314,14 @@ class Room:
                 return
             timer_state = await self.timer.update()
             if timer_state:
-                if self.round == self.max_rounds - 1:
+                if self.round == self.max_rounds:
                     # конец игры?
+                    for user_id in self.player_map.copy().keys():
+                        members = len(self.cycle_list)
+                        current_iter = (self.cycle_map[user_id] + self.round - 1 + members) % members
+                        await self.albums[user_id].add_text_page((len(self.text_history[user_id]) - 1) * 2,
+                                                                 len(self.text_history) * 2 - 1,
+                                                                 self.text_history[user_id][-1], self.cycle_list[current_iter])
                     await self.stop_game()
                     return
                 await self.picture_round_start()
@@ -283,6 +332,7 @@ class Room:
 
 # апдейт всего и вся
 async def global_update():
+
     while True:
         for room_id in rooms.copy().keys():
             # апдейтим комнату

@@ -7,5 +7,5 @@ accelerate
 tqdm
 requests
 fastapi
-Pillow
+Pillow==9.5.0
 aiogram==2.23.1

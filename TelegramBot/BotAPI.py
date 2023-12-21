@@ -13,17 +13,22 @@ async def send_photo_with_text(user, img_path, message):
     await botInternal.send_photo(photo=open(img_path, 'rb'), caption=message, chat_id=user)
 
 
-def get_profile_photo(user_id):
-    image = Image.open('resources/missing.png').convert('RGBA')
-    return image
+async def send_gif_with_text(user, img_path, message):
+    await botInternal.send_animation(animation=open(img_path, 'rb'), caption=message, chat_id=user)
 
-    #photos = await botInternal.get_user_profile_photos(user_id)
-    #if photos.total_count == 0:
-        #image = Image.open('resources/missing.png')
-        #return image
-    #else:
-        #file_id = photos.photos[0]
-        #return
+
+async def get_profile_photo(user_id, destiny):
+    if user_id == 0:
+        return Image.open('resources/missing.png')
+    photos = await botInternal.get_user_profile_photos(user_id)
+    if photos.total_count == 0:
+        image = Image.open('resources/missing.png')
+        return image
+    else:
+        file_id = photos.photos[0][-1].file_id
+        await botInternal.download_file_by_id(file_id = file_id, destination=destiny)
+        image = Image.open(destiny)
+        return image
 
 
 def init_bot(bot_in):
