@@ -12,14 +12,17 @@ class Album:
         self.player_map = player_map
         self.history = []
         self.room_id = room_id
-        self.player_map[0] = PlayerTG(0, 0, 'AI')
+        self.page = 0
 
     def make_gif(self, gif_path, duration):
         self.history[0].save(gif_path,
                              save_all=True, append_images=self.history[1:],
                              optimize=True, duration=duration, loop=0)
 
-    async def add_image_page(self, numer, count, image_path, user_id):
+    async def add_image_page(self, count, image_path, user_id):
+        if image_path == '':
+            image_path = 'resources/emptyImage.jpg'
+
         background = Image.open('resources/alubum_background_1.png').convert('RGB')
         user_image = Image.open(image_path).convert('RGB')
 
@@ -31,12 +34,12 @@ class Album:
         user_image = user_image.resize((width_paste1, height_paste2))
         background.paste(user_image, box2)
 
-        await self.assemble_page(background, numer, count, user_id)
+        await self.assemble_page(background, count, user_id)
         self.history.append(background)
         print('gen image')
         #background.show()
 
-    async def add_text_page(self, numer, count, text, user_id):
+    async def add_text_page(self, count, text, user_id):
         background = Image.open('resources/alubum_background_2.png').convert('RGB')
 
         width_back, height_back = background.width, background.height
@@ -56,12 +59,12 @@ class Album:
             draw.text((line_x, line_y), line, font=font, fill=(200, 50, 200), stroke_width=1,
                       stroke_fill=(200, 50, 200))
 
-        await self.assemble_page(background, numer, count, user_id)
+        await self.assemble_page(background, count, user_id)
         print('gen text')
         self.history.append(background)
         #background.show()
 
-    async def assemble_page(self, image, numer, count, user_id):
+    async def assemble_page(self, image, count, user_id):
         width, height = image.width, image.height
         gap_width, gap_height = width // 100, height // 50
         rect_width = ((width - gap_width) / count) - gap_width
@@ -70,6 +73,8 @@ class Album:
         current_x, current_y = gap_width, height - 2 * gap_height
         draw = ImageDraw.Draw(image)
         username = self.player_map[user_id].username
+        numer = self.page
+        self.page += 1
 
         for i in range(count):
             if i <= numer:

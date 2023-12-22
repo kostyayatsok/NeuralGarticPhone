@@ -1,17 +1,15 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
+from fastapi import File, UploadFile
 from uuid import uuid4
 
 from fastapi.middleware.cors import CORSMiddleware
-# import TextEncoder
+from Player import Player
 from io import BytesIO
-#import PictureGenerator
-#import PictureDescriber
 from PIL import Image
+import shutil
 import os
 
-from Player import Player
 import threading
 app = FastAPI()
 
@@ -23,14 +21,25 @@ app.add_middleware(
     allow_headers=['*'],
 )
 player = Player()
-def generate(texts):
+
+def generate_img(texts):
    image = player.draw_pictures(texts)
    return image
+
+def generate_txt(image_paths):
+   print(image_paths)
+   images = []
+   for image_path in image_paths:
+      images.append(Image.open(image_path))
+   texts = player.describe(images)
+   return texts
 
 def send(img_byte_arr):
     return Response(content=img_byte_arr, media_type="image/jpeg")
 
-queue = []
+queue_image_gen = []
+queue_text_gen = []
+text_results = {}
 
 @app.post(
   "/get_image",
@@ -42,7 +51,6 @@ queue = []
   response_class=Response
 )
 async def get_image(id):
-    print(f"{id}.png")
     if os.path.exists(f"{id}.jpg"):
       image=Image.open(f"{id}.jpg")
       img_byte_arr = BytesIO()
@@ -50,16 +58,45 @@ async def get_image(id):
       img_byte_arr = img_byte_arr.getvalue()
       return Response(content=img_byte_arr, media_type="image/jpeg")
     return None
+
+
+@app.post(
+  "/get_text",
+  responses = {
+     200: {
+         "content": {"text/plain": {}}
+     }
+  },
+  response_class=Response
+)
+async def get_text(id):
+    if id in text_results.keys():
+      print('heays')
+      return Response(content=text_results[id], media_type="text/plain")
+    return None
+
+
 @app.post('/add_text')
 async def add_text(text):
     id = uuid4()
-    queue.append((text, id))
+    queue_image_gen.append((text, id))
     return id
-    """img = Image.open("cat.jpg")
-    img_byte_arr = BytesIO()
-    img.save(img_byte_arr, format='PNG')
-    img_byte_arr = img_byte_arr.getvalue()
-    return Response(content=img_byte_arr, media_type="image/png")"""
+
+
+@app.post('/add_image')
+async def add_image(file: UploadFile):
+    id = uuid4()
+    try:
+        with open(str(id)+'.jpg', 'wb') as f:
+            shutil.copyfileobj(file.file, f)
+        queue_text_gen.append((str(id)+'.jpg', id))
+    except Exception:
+        return {"message": "There was an error uploading the file"}
+    finally:
+        file.file.close()
+
+    return id
+
 
 BATCH_SIZE = 16
 def background(f):
@@ -69,23 +106,33 @@ def background(f):
 
 
 @background
-def generate_text():
+def generate_image():
   while True:
-    global queue
-    if len(queue)>0:
-        idx = min(BATCH_SIZE, len(queue))
-        cur = queue[:idx]
+    global queue_image_gen
+    if len(queue_image_gen)>0:
+        idx = min(BATCH_SIZE, len(queue_image_gen))
+        cur = queue_image_gen[:idx]
         texts = list(map(lambda x : x[0], cur))
         ids = list(map(lambda x : x[1], cur))
-        for img, id in zip(generate(texts), ids):
+        for img, id in zip(generate_img(texts), ids):
             print(img)
             img.save(f"{id}.jpg")
-        queue = queue[idx:]
-        # img_byte_arr = BytesIO()
-        # img.save(img_byte_arr, format='PNG')
-        # img_byte_arr = img_byte_arr.getvalue()
-        # send(img_byte_arr)
-        # return Response(content=img_byte_arr, media_type="image/png")"""
+        queue_image_gen = queue_image_gen[idx:]
+
+
+@background
+def generate_text():
+  while True:
+    global queue_text_gen
+    if len(queue_text_gen)>0:
+        idx = min(BATCH_SIZE, len(queue_text_gen))
+        cur = queue_text_gen[:idx]
+        img_paths = list(map(lambda x : x[0], cur))
+        ids = list(map(lambda x : x[1], cur))
+        for img, id in zip(generate_txt(img_paths), ids):
+            print(img)
+            text_results[str(id)] = img
+        queue_text_gen = queue_text_gen[idx:]
 
 
 import nest_asyncio
@@ -94,6 +141,7 @@ import uvicorn
 ngrok.set_auth_token("2ZnWHYpmwKHi5dtObtpx6VzftVS_2ChLCkbxdpG8na2BqGPg5")
 
 generate_text()
+generate_image()
 
 ngrok_tunnel = ngrok.connect(8000)
 print('Public URL:', ngrok_tunnel.public_url)
