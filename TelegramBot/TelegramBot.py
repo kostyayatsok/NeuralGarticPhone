@@ -8,7 +8,7 @@ import asyncio
 import RoomMaster
 
 # Инитаем бота
-BOT_TOKEN = '6407292093:AAGhgQyUL40aexE9VuXmyc4tjWCK9RrCZxQ'
+BOT_TOKEN = 'QyUL40aexE9VuXmyc4tjWC6407292093:AAGhgK9RrCZxQ'
 botik = Bot(token=BOT_TOKEN)
 disp = Dispatcher(botik)
 BotAPI.init_bot(botik)

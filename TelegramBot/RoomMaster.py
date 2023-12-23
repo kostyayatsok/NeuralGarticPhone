@@ -158,15 +158,19 @@ class Room:
                 self.player_map[user_id].neuro_image_asker = False
                 self.player_map[user_id].neuro_text_asker = True
         elif self.game_mode == 0:
-            ai_id = 1000000000000 + random.randint(1, 10000000)
-            await self.add_member(ai_id, 'AI bot')
-            self.player_map[ai_id].neuro_image_asker = True
-            self.player_map[ai_id].neuro_text_asker = True
+            for i in range(1):
+                ai_id = 1000000000000 + random.randint(1, 10000000)
+                await self.add_member(ai_id, 'AI bot')
+                self.player_map[ai_id].neuro_image_asker = True
+                self.player_map[ai_id].neuro_text_asker = True
 
         members = len(self.player_map.keys())
         self.round = 0
         self.stage = 0
-        self.max_rounds = 4
+        if self.game_mode == 0:
+            self.max_rounds = members
+        else:
+            self.max_rounds = members * 2 - 1
         self.build_timer(6, [5, 2], 'Игра начнется через {0} секунд!')
         self.cycle_list = []
         self.cycle_map = {}

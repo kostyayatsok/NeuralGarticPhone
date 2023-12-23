@@ -47,4 +47,4 @@ def get_text(text_id):
     return resp.text
 
 
-URL = 'https://8c70-34-125-241-205.ngrok-free.app'
+URL = 'https://d1c7-34-105-95-165.ngrok-free.app'
