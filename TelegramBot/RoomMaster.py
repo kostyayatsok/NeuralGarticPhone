@@ -301,7 +301,6 @@ class Room:
 
     async def start_text_round(self):
         await self.album_image()
-        await self.send_plain_all('Раунд '+str(self.round+1))
 
         self.round += 1
         self.stage = 1
@@ -309,6 +308,7 @@ class Room:
         if self.round > self.max_rounds:
             await self.stop_game()
             return
+        await self.send_plain_all('Раунд {0}/{1}'.format(str(self.round), str(self.max_rounds)))
 
         for user_id in self.player_map.copy().keys():
             print(user_id, self.player_map[user_id].next_id)
