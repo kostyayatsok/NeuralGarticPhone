@@ -8,7 +8,7 @@ import asyncio
 import RoomMaster
 
 # Инитаем бота
-BOT_TOKEN = 'QyUL40aexE9VuXmyc4tjWC6407292093:AAGhgK9RrCZxQ'
+BOT_TOKEN = ''
 botik = Bot(token=BOT_TOKEN)
 disp = Dispatcher(botik)
 BotAPI.init_bot(botik)
@@ -31,7 +31,7 @@ async def create_chat_callback(message: types.Message):
     inline_btn_1 = InlineKeyboardButton('Присоединиться к '+room_id, callback_data='button1')
     inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
     await CommandResolver.join_command(message.from_user, message.chat.id, is_admin=True)
-    await botik.send_message(message.chat.id, 'Играть:', reply_markup=inline_kb1)
+    await botik.send_message(message.chat.id, 'Играть: '+room_id, reply_markup=inline_kb1)
 
 
 @disp.callback_query_handler(text='button1')
