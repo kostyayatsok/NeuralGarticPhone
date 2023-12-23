@@ -6,13 +6,13 @@ from Translator import Translator
 class Player:
     def __init__(self):
         self.translator = Translator('config2.ini')
-        self.generator = PictureGenerator(steps=25)
+        self.generator = PictureGenerator(steps=40)
         self.describer = PictureDescriber()
 
     def draw_pictures(self, prompt):
         prompt = self.translator.translate(prompt, 'en')
         for j in range(len(prompt)):
-            prompt[j] = "drawing of a " + prompt[j] + " in the style of <gp> on white background"
+            prompt[j] = "drawing of a " + prompt[j] + " white background in <gp> style"
         pictures = self.generator.generate_pictures(prompt)
         return pictures
 
