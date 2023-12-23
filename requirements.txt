@@ -9,4 +9,6 @@ requests
 fastapi
 Pillow==9.5.0
 aiogram==2.23.1
-numpy
+pyngrok
+uvicorn
+python-multipart
