@@ -7,11 +7,11 @@ from tqdm.auto import tqdm
 from torch import autocast
 from PIL import Image
 from diffusers import StableDiffusionPipeline
-from diffusers import StableDiffusionPipeline
 import numpy as np
+from optimum.intel import OVStableDiffusionPipeline
 
 sdpath = "stabilityai/stable-diffusion-2"
-
+# sdpath = "OFA-Sys/small-stable-diffusion-v0"
 
 class PictureGenerator:
     inited = False
@@ -20,15 +20,30 @@ class PictureGenerator:
     def __init__(
         self,
         device="cuda" if torch.cuda.is_available() else "cpu",
-        steps=25,
+        steps=50,
         guidance_scale=7.5,
-        path="sd-concepts-library/gphone01",
+        # path="sd-concepts-library/gphone_small",
+        path="sd-concepts-library/gphone03"
     ):
+        # Define the shapes related to the inputs and desired outputs
+        self.num_images_per_prompt = 1
+        self.height = 256
+        self.width = 256
+
         if not PictureGenerator.inited:
-            PictureGenerator.pipe = StableDiffusionPipeline.from_pretrained(
-                sdpath, torch_dtype=torch.float16
-            ).to(device)
-            PictureGenerator.pipe.load_textual_inversion(path)
+            if device == "cpu":
+                PictureGenerator.pipe = OVStableDiffusionPipeline.from_pretrained(
+                    sdpath, compile=False, export=True
+                ).to(device)
+                PictureGenerator.pipe.load_textual_inversion(path, "<gp>")
+                PictureGenerator.pipe.reshape(batch_size=1, height=self.height, width=self.width, num_images_per_prompt=self.num_images_per_prompt)
+                PictureGenerator.pipe.compile()
+            else:
+                PictureGenerator.pipe = StableDiffusionPipeline.from_pretrained(
+                    sdpath
+                ).to(device)
+                PictureGenerator.pipe.load_textual_inversion(path)
+            
             PictureGenerator.inited = True
         self.device = device
         self.steps = steps
@@ -54,8 +69,10 @@ class PictureGenerator:
     def generate_pictures(self, prompt):
         images = self.pipe(
             prompt,
-            num_images_per_prompt=1,
+            num_images_per_prompt=self.num_images_per_prompt,
             num_inference_steps=self.steps,
             guidance_scale=self.scale,
+            height=self.height,
+            width=self.width,
         ).images
-        return self.make_bw(images)
+        return images

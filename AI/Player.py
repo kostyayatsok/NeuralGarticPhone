@@ -4,11 +4,16 @@ from Generator import PictureGenerator
 from PIL import Image
 from Translator import Translator
 
+import torch
+
+torch.set_grad_enabled(False) # During inference we don’t need to compute the gradients
+torch.set_num_threads(1) # We would like to configure the parallelism using Gunicorn workers rather than through PyTorch. This will maximise CPU usage
+
 
 class Player:
     def __init__(self):
         self.translator = Translator("../config.ini")
-        self.generator = PictureGenerator(steps=25)
+        self.generator = PictureGenerator()
         self.describer = PictureDescriber()
 
     def draw_pictures(self, prompt):

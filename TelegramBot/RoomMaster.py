@@ -14,7 +14,7 @@ import shutil
 # Собственно класс комнаты
 class Room:
     def __init__(self, id_in, chat_id):
-        self.URL = "https://178f-34-138-2-250.ngrok-free.app"  # ссылка на сервер
+        self.URL = "http://127.0.0.1:8000"  # ссылка на сервер
         self.room_id = id_in  # ID комнаты
         self.cycle_list = (
             []
