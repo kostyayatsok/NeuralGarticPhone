@@ -67,7 +67,7 @@ class Room:
         self.player_map[user_id] = new_player
 
         print(user_id, '(admin = {0}) now is in room'.format(is_admin), self.room_id)
-        if user_id < 1000000000000:
+        if user_id < 100000000000:
             await self.send_plain_all('Игрок {0} зашёл в комнату!'.format(user_name), send_to_group=True)
 
     # вывести список игроков
@@ -75,7 +75,7 @@ class Room:
         # объединям всех игроков в строку
         result = 'Игроки: '
         for player in self.player_map.copy().values():
-            if player.tg_id >= 1000000000000:
+            if player.tg_id >= 100000000000:
                 continue
             result += player.username
             result += ','
@@ -119,7 +119,7 @@ class Room:
             players.pop(user_id)
 
         print(user_id, 'left the room ', self.room_id)
-        if user_id < 1000000000000:
+        if user_id < 100000000000:
             await self.send_plain_all('Игрок {0} покинул комнату!'.format(username), send_to_group=True)
 
         # если в комнате пусто
@@ -208,7 +208,7 @@ class Room:
 
         all_users = ''
         for user_id in self.player_map.copy().keys():
-            if self.player_map[user_id].tg_id >= 1000000000000:
+            if self.player_map[user_id].tg_id >= 100000000000:
                 continue
             all_users += self.player_map[user_id].username
             all_users += ', '
@@ -227,7 +227,7 @@ class Room:
         self.gif_storage = []
 
         for user_id in self.player_map.copy().keys():
-            if user_id >= 1000000000000:
+            if user_id >= 100000000000:
                 await self.remove_member(user_id, destroy_on_empty=True)
 
         await self.send_plain_all('Игра окончена, ждём ведущего', send_to_group=True)
@@ -238,7 +238,7 @@ class Room:
         cnt = 0
         for i in range(len(self.cycle_list)):
             user_id = self.cycle_list[i]
-            if user_id >= 1000000000000 and self.game_mode > 0:
+            if user_id >= 100000000000 and self.game_mode > 0:
                 continue
             cnt += 1
         if cnt != len(self.gif_storage):
@@ -388,7 +388,7 @@ class Room:
             if len(self.gif_storage) > cnt:
                 continue
             user_id = self.cycle_list[i]
-            if user_id >= 1000000000000 and self.game_mode > 0:
+            if user_id >= 100000000000 and self.game_mode > 0:
                 continue
             cnt += 1
             album = self.albums[user_id]

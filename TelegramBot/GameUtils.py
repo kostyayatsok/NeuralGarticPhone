@@ -26,7 +26,7 @@ class PlayerTG:
         if self.neuro_text_asker:
             if image_path == '':
                 image_path = 'randomPictures/img' + str(random.randint(1, 8)) + '.jpg'
-            if self.tg_id >= 1000000000000 or (self.neuro_text_asker and self.neuro_image_asker):
+            if self.tg_id >= 100000000000 or (self.neuro_text_asker and self.neuro_image_asker):
                 self.cur_text = None
                 text_id = InternetAPI.post_image(image_path)
                 self.text_task = text_id
@@ -41,7 +41,7 @@ class PlayerTG:
         if self.neuro_image_asker:
             if text_data == '':
                 text_data = 'picture'
-            if self.tg_id >= 1000000000000 or (self.neuro_text_asker and self.neuro_image_asker):
+            if self.tg_id >= 100000000000 or (self.neuro_text_asker and self.neuro_image_asker):
                 self.cur_image = None
                 image_id = InternetAPI.post_text(text_data)
                 self.image_task = image_id
@@ -52,7 +52,7 @@ class PlayerTG:
 
     async def obtain_text(self):
         if self.neuro_text_asker:
-            if self.tg_id >= 1000000000000 or (self.neuro_text_asker and self.neuro_image_asker):
+            if self.tg_id >= 100000000000 or (self.neuro_text_asker and self.neuro_image_asker):
                 text_id = self.text_task[1:-1]
                 self.cur_text = InternetAPI.get_text(text_id)
                 # ar = ['amogus', 'bebra', 'allfucks', 'sliv']
@@ -61,7 +61,7 @@ class PlayerTG:
 
     async def obtain_image(self):
         if self.neuro_image_asker:
-            if self.tg_id >= 1000000000000 or (self.neuro_text_asker and self.neuro_image_asker):
+            if self.tg_id >= 100000000000 or (self.neuro_text_asker and self.neuro_image_asker):
                 image_id = self.image_task[1:-1]
                 path = self.room_id + "/imgAI" + str(image_id) + str(self.tg_id) + ".jpg"
                 self.cur_image = InternetAPI.get_image(image_id, path)

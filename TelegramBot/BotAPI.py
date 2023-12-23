@@ -12,7 +12,7 @@ async def delete_messages(room_id):
 
 
 async def send_plain_text(room_id, user, message):
-    if user >= 1000000000000:
+    if user >= 100000000000:
         return
     try:
         message = await botInternal.send_message(user, message)
@@ -25,7 +25,7 @@ async def send_plain_text(room_id, user, message):
 
 
 async def send_photo_with_text(room_id, user, img_path, message):
-    if user >= 1000000000000:
+    if user >= 100000000000:
         return
     try:
         message = await botInternal.send_photo(photo=open(img_path, 'rb'), caption=message, chat_id=user)
@@ -38,7 +38,7 @@ async def send_photo_with_text(room_id, user, img_path, message):
 
 
 async def send_gif_with_text(room_id, user, img_path, message):
-    if user >= 1000000000000:
+    if user >= 100000000000:
         return
     try:
         message = await botInternal.send_animation(animation=open(img_path, 'rb'), caption=message, chat_id=user)
@@ -55,7 +55,7 @@ async def download_image_by_id(file_id, path):
 
 
 async def get_profile_photo(user_id, destiny):
-    if user_id >= 1000000000000:
+    if user_id >= 100000000000:
         return Image.open('resources/missing.png')
     try:
         photos = await botInternal.get_user_profile_photos(user_id)
