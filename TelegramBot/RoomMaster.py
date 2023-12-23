@@ -95,7 +95,7 @@ class Room:
             new_title = 'нейро-художник'
         elif new_gamemode == 2:
             new_title = 'нейро-зритель'
-        await self.send_plain_all('Ведущий изменил режим игры! Новый режим: '+new_title)
+        await self.send_plain_all('Ведущий изменил режим игры! Новый режим: '+new_title, send_to_group=True)
         self.game_mode = new_gamemode
 
     # стереть комнату
@@ -327,7 +327,6 @@ class Room:
 
     async def start_image_round(self):
         await self.album_text()
-        await self.send_plain_all('Раунд ' + str(self.round + 1))
 
         self.round += 1
         self.stage = 2
@@ -335,6 +334,8 @@ class Room:
         if self.round > self.max_rounds:
             await self.stop_game()
             return
+
+        await self.send_plain_all('Раунд {0}/{1}'.format(str(self.round), str(self.max_rounds)))
 
         for user_id in self.player_map.copy().keys():
             text_data = self.player_map[user_id].cur_text

@@ -30,7 +30,7 @@ async def create_chat_callback(message: types.Message):
         return
     inline_btn_1 = InlineKeyboardButton('Присоединиться к '+room_id, callback_data='button1')
     inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
-    await CommandResolver.join_command(message.from_user, message.chat.id, is_admin=True)
+    await CommandResolver.join_command(message.from_user, room_id, is_admin=True)
     await botik.send_message(message.chat.id, 'Играть: '+room_id, reply_markup=inline_kb1)
 
 
