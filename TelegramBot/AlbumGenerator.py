@@ -15,6 +15,8 @@ class Album:
         self.page = 0
 
     def make_gif(self, gif_path, duration):
+        if len(self.history) == 0:
+            return
         self.history[0].save(gif_path,
                              save_all=True, append_images=self.history[1:],
                              optimize=True, duration=duration, loop=0)

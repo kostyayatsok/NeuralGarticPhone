@@ -427,8 +427,10 @@ async def global_update():
                 room = rooms[room_id]
                 await room.room_update()
             except BaseException as err:
-                print('EXCEPTION: ', err)
-                traceback.print_stack()
+                red = '\033[91m'
+                endc = '\033[0m'
+                print(red, 'EXCEPTION: ', err, endc)
+                print(red, traceback.format_exc(), endc)
                 bad = True
             if bad:
                 try:
@@ -436,9 +438,10 @@ async def global_update():
                     await room.stop_game()
                     await room.destroy_room()
                 except BaseException as err:
-                    print('EXCEPTION: ', err)
-                    traceback.print_stack()
-                    pass
+                    red = '\033[91m'
+                    endc = '\033[0m'
+                    print(red, 'EXCEPTION: ', err, endc)
+                    print(red, traceback.format_exc(), endc)
         await asyncio.sleep(0.5)
 
 
