@@ -59,7 +59,6 @@ async def get_image(id):
       return Response(content=img_byte_arr, media_type="image/jpeg")
     return None
 
-
 @app.post(
   "/get_text",
   responses = {
@@ -74,7 +73,6 @@ async def get_text(id):
       print('heays')
       return Response(content=text_results[id], media_type="text/plain")
     return None
-
 
 @app.post('/add_text')
 async def add_text(text):
@@ -115,7 +113,6 @@ def generate_image():
         texts = list(map(lambda x : x[0], cur))
         ids = list(map(lambda x : x[1], cur))
         for img, id in zip(generate_img(texts), ids):
-            print(img)
             img.save(f"{id}.jpg")
         queue_image_gen = queue_image_gen[idx:]
 
