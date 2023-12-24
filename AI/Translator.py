@@ -5,10 +5,10 @@ import json
 
 
 class Translator:
-    def __init__(self, config_file):   # 2 hours default
+    def __init__(self, config_file):   # 2 hours translator
         self.config = configparser.ConfigParser()
         self.config.read(config_file)
-        self.api_key = self.config['default']['api_key']
+        self.api_key = self.config['translator']['api_key']
         # with open(oauth_json) as f:
         #     self.oauth = json.load(f)
         # print(self.config.sections())
@@ -30,7 +30,7 @@ class Translator:
         body = {
             "targetLanguageCode": target_lang,
             "texts": prompt,
-            "folderId": self.config['default']["identifier"]
+            "folderId": self.config['translator']["identifier"]
         }
         response = requests.post(
             'https://translate.api.cloud.yandex.net/translate/v2/translate',

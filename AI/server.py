@@ -9,6 +9,9 @@ from io import BytesIO
 from PIL import Image
 import shutil
 import os
+import nest_asyncio
+import uvicorn
+
 
 import threading
 app = FastAPI()
@@ -131,6 +134,8 @@ def generate_text():
             text_results[str(id)] = img
         queue_text_gen = queue_text_gen[idx:]
 
+generate_text()
+generate_image()
 
 import nest_asyncio
 from pyngrok import ngrok
