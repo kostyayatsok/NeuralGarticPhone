@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 from torch import autocast
 from PIL import Image
 from diffusers import StableDiffusionPipeline
-from optimum.intel import OVStableDiffusionPipeline
+# from optimum.intel import OVStableDiffusionPipeline
 import numpy as np
 
 sdpath = "stabilityai/stable-diffusion-2"
@@ -20,22 +20,14 @@ class PictureGenerator:
     def __init__(
         self,
         device="cpu",
-        steps=15,
+        steps=40,
         guidance_scale=7.5,
         path="sd-concepts-library/gphone03",
         # path="sd-concepts-library/gphone_small"
     ):
         if not PictureGenerator.inited:
-            if device == "cpu":
-                PictureGenerator.pipe = OVStableDiffusionPipeline.from_pretrained(
-                    sdpath, compile=False, export=True, safety_checker = None,
-                ).to(device)
-                PictureGenerator.pipe.load_textual_inversion(path, "<gp>")
-                # PictureGenerator.pipe.reshape(batch_size=1, height=128, width=128, num_images_per_prompt=1)
-                PictureGenerator.pipe.compile()
-            else:
-                PictureGenerator.pipe = StableDiffusionPipeline.from_pretrained(sdpath).to(device)
-                PictureGenerator.pipe.load_textual_inversion(path)
+            PictureGenerator.pipe = StableDiffusionPipeline.from_pretrained(sdpath).to(device)
+            PictureGenerator.pipe.load_textual_inversion(path)
             inited = True
         self.device = device
         self.steps = steps
